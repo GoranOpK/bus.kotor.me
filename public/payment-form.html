@@ -1,42 +1,41 @@
-<form id="payment-form">
-  <input type="text" name="card_number" placeholder="Card Number" required /><br/>
-  <input type="text" name="exp_month" placeholder="MM" required maxlength="2" style="width: 50px;"/>
-  <input type="text" name="exp_year" placeholder="YY" required maxlength="2" style="width: 50px;"/>
-  <input type="text" name="cvv" placeholder="CVV" required maxlength="4" style="width: 50px;"/><br/>
-  <input type="text" name="cardholder" placeholder="Cardholder Name" required /><br/>
-  <button type="submit">Plati</button>
-</form>
-<div id="payment-result"></div>
-<script>
-const CSRF_TOKEN = 'QvfNezVoOGu65W0CmVX3sM2VdQ7bsJL7Fgm65OGj';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kotorbus Payment</title>
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <header style="display: flex; align-items: center; justify-content: space-between;">
+    <div style="flex:1;"></div>
+    <img src="src/logo.png" alt="Kotorbus Logo" style="display:block; margin:auto;">
+    <div style="flex:1; display:flex; justify-content: flex-end; gap:10px; align-items:center;">
+      <img src="src/gb.png" alt="English" id="lang-en" style="width:32px; height:32px; cursor:pointer;">
+      <img src="src/mne.png" alt="Crnogorski" id="lang-cg" style="width:32px; height:32px; cursor:pointer;">
+    </div>
+  </header>
 
-function encodeFormData(data) {
-    return Array.from(data.entries()).map(
-        ([key, value]) => encodeURIComponent(key) + '=' + encodeURIComponent(value)
-    ).join('&');
-}
+  <div class="container" style="max-width:400px; margin:40px auto;">
+    <div id="payment-amount" style="font-weight:bold; margin-bottom:16px;"></div>
+    <form id="payment-form">
+      <input type="text" name="first_name" placeholder="Ime" required /><br/>
+      <input type="text" name="last_name" placeholder="Prezime" required /><br/>
+      <input type="email" name="email" placeholder="E-mail" required /><br/>
+      <input type="text" name="billing_address1" placeholder="Adresa" required /><br/>
+      <input type="text" name="billing_city" placeholder="Grad" required /><br/>
+      <input type="text" name="billing_postcode" placeholder="Poštanski broj" required /><br/>
+      <input type="text" name="billing_state" placeholder="Država/Regija" required /><br/>
+      <input type="text" name="billing_country" placeholder="ISO kod države (npr. MNE)" maxlength="3" required /><br/>
+      <input type="hidden" name="vehicle_type_id" id="vehicle_type_id_hidden" />
+      <button type="submit">Plati</button>
+    </form>
+    <div id="payment-result"></div>
+  </div>
 
-document.getElementById('payment-form').onsubmit = async function(e) {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-
-    const res = await fetch('/procesiraj-placanje', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': CSRF_TOKEN,
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: encodeFormData(formData)
-    });
-
-    let json;
-    try {
-        json = await res.json();
-    } catch (err) {
-        document.getElementById('payment-result').innerText = "Greška u komunikaciji sa serverom.";
-        return;
-    }
-    document.getElementById('payment-result').innerText = json.message || JSON.stringify(json);
-};
-</script>
+  <footer>
+    <img src="src/logoop.png" alt="OpKotor" style="height:80px;">
+    <p>Bidonkaktus 🌵 &copy; 2025 Kotorbus</p>
+  </footer>
+  <script src="src/payment-form.js"></script>
+</body>
+</html>

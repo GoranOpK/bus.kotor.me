@@ -12,7 +12,7 @@ return [
     | a ne na cijeli sajt. 'sanctum/csrf-cookie' koristiš ako koristiš Sanctum
     | za autentifikaciju.
     */
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie' , 'procesiraj-placanje'],
 
     /*
     |--------------------------------------------------------------------------
@@ -43,11 +43,7 @@ return [
         'https://127.0.0.1:8000',
         'http://127.0.0.1:8080',
         'https://127.0.0.1:8080',
-        'http://192.168.115.106:8000',
-        'https://192.168.115.106:8000',
-        'http://192.168.115.106:8080',
-        'https://192.168.115.106:8080',
-        'https://tvoj-frontend.com', // Produkcija
+        'https://bus.kotor.me', // Produkcija
     ],
 
     /*

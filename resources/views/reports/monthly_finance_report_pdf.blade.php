@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>{{ $title ?? 'Mjesečni finansijski izvještaj' }}</title>
+    <title>{{ $title ?? 'Mjesečni finansijski izvještaj - Kotor Bus' }}</title>
     <style>
         body { font-family: DejaVu Sans, Arial, sans-serif; }
         table { border-collapse: collapse; width: 100%; margin-top: 24px; }
@@ -11,7 +11,7 @@
     </style>
 </head>
 <body>
-    <h2>{{ $title ?? 'Mjesečni finansijski izvještaj' }}</h2>
+    <h2>{{ $title ?? 'Mjesečni finansijski izvještaj - Kotor Bus' }}</h2>
     <p>Mjesec: {{ $month }} / {{ $year }}</p>
     <table>
         <thead>

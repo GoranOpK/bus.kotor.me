@@ -1,53 +1,54 @@
-// --- GLOBALNO DEFINISANE FUNKCIJE (mora biti van DOMContentLoaded) ---
+// --- GLOBAL FUNCTIONS ---
+
 function fetchAvailableSlotsForDate(date, callback) {
   fetch('/api/timeslots/available?date=' + encodeURIComponent(date))
     .then(res => res.json())
-    .then(slots => {
-      callback(slots); 
-    });
+    .then(callback);
 }
 
-function populateTimeSlotSelect(selectId, times) {
+function populateTimeSlotSelect(selectId, times, selectedValue = '') {
   const select = document.getElementById(selectId);
+  if (!select) return;
   select.innerHTML = '<option value="">Select time slot</option>';
+
+  const reservationDateInput = document.getElementById('reservation_date');
+  const selectedDate = reservationDateInput?.value;
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+
+  let minTime = null;
+  if (selectedDate === todayStr) {
+    now.setMinutes(now.getMinutes() + 1);
+    minTime = now.toTimeString().slice(0, 5);
+  }
+
   times.forEach(time => {
-    const option = document.createElement('option');
-    option.value = time;
-    option.textContent = time;
-    select.appendChild(option);
+    if (!minTime || time >= minTime) {
+      const option = document.createElement('option');
+      option.value = time;
+      option.textContent = time;
+      select.appendChild(option);
+    }
   });
+
+  // Restore previous selection if still valid
+  if (selectedValue && Array.from(select.options).some(opt => opt.value === selectedValue)) {
+    select.value = selectedValue;
+  }
 }
 
 function filterTimeSlots() {
   const arrivalSelect = document.getElementById('arrival-time-slot');
   const departureSelect = document.getElementById('departure-time-slot');
+  if (!arrivalSelect || !departureSelect) return;
   const allArrivalOptions = Array.from(arrivalSelect.options).map(opt => opt.value).filter(Boolean);
   const allDepartureOptions = Array.from(departureSelect.options).map(opt => opt.value).filter(Boolean);
 
   const arrivalTime = arrivalSelect.value;
   const departureTime = departureSelect.value;
 
-  if (arrivalTime) {
-    const prevDeparture = departureSelect.value;
-    departureSelect.innerHTML = '<option value="">Select time slot</option>';
-    allDepartureOptions.forEach(time => {
-      if (time > arrivalTime) {
-        const option = document.createElement('option');
-        option.value = time;
-        option.textContent = time;
-        departureSelect.appendChild(option);
-      }
-    });
-
-    if (prevDeparture && prevDeparture > arrivalTime) {
-      departureSelect.value = prevDeparture;
-    } else {
-      departureSelect.value = '';
-    }
-  }
-
-  if (departureTime) {
-    const prevArrival = arrivalSelect.value;
+  if (arrivalTime && departureTime) {
+    // Filter arrival options to before departure
     arrivalSelect.innerHTML = '<option value="">Select time slot</option>';
     allArrivalOptions.forEach(time => {
       if (time < departureTime) {
@@ -57,72 +58,27 @@ function filterTimeSlots() {
         arrivalSelect.appendChild(option);
       }
     });
+    arrivalSelect.value = arrivalTime < departureTime ? arrivalTime : '';
 
-    if (prevArrival && prevArrival < departureTime) {
-      arrivalSelect.value = prevArrival;
-    } else {
-      arrivalSelect.value = '';
-    }
+    // Filter departure options to after arrival
+    departureSelect.innerHTML = '<option value="">Select time slot</option>';
+    allDepartureOptions.forEach(time => {
+      if (time > arrivalTime) {
+        const option = document.createElement('option');
+        option.value = time;
+        option.textContent = time;
+        departureSelect.appendChild(option);
+      }
+    });
+    departureSelect.value = departureTime > arrivalTime ? departureTime : '';
+  } else {
+    // If one is empty, show all options
+    populateTimeSlotSelect('arrival-time-slot', allArrivalOptions, arrivalTime);
+    populateTimeSlotSelect('departure-time-slot', allDepartureOptions, departureTime);
   }
 }
 
-async function reserveSlot() {
-  const reservationDate = document.getElementById('reservation_date').value;
-  const arrivalTimeStr = document.getElementById('arrival-time-slot').value;
-  const departureTimeStr = document.getElementById('departure-time-slot').value;
-  const company = document.getElementById('company_name').value.trim();
-  const country = document.getElementById('country-input').value.trim();
-  const registration = document.getElementById('registration-input').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const vehicleType = document.getElementById('vehicle_type_id').value;
-
-  const slotsResponse = await fetch('/api/timeslots');
-  const slotsData = await slotsResponse.json();
-  const slots = slotsData.data || slotsData;
-  console.log('Vrijednost iz dropdown-a za dolazak:', arrivalTimeStr);
-  console.log('Vrijednost iz dropdown-a za odlazak:', departureTimeStr);
-  console.log('Svi slotovi sa backend-a:', slots);
-  const arrivalSlot = slots.find(slot => slot.time_slot.startsWith(arrivalTimeStr));
-  const departureSlot = slots.find(slot => slot.time_slot.startsWith(departureTimeStr));
-
-  if (!arrivalSlot || !departureSlot) {
-    alert('Could not find the selected time slot!');
-    return;
-  }
-
-  const data = {
-    drop_off_time_slot_id: arrivalSlot.id,
-    pick_up_time_slot_id: departureSlot.id,
-    reservation_date: reservationDate,
-    user_name: company,
-    country: country,
-    license_plate: registration,
-    vehicle_type_id: vehicleType,
-    email: email
-  };
-
-  // CSRF zaštita: Prvo povuci CSRF cookie pa onda POST rezervaciju!
-  await fetch('https://localhost:8000/sanctum/csrf-cookie', { credentials: 'include' });
-
-  await fetch('https://localhost:8000/api/reservations/reserve', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'X-XSRF-TOKEN': decodeURIComponent(document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='))?.split('=')[1] || '')
-    },
-    credentials: 'include',
-    body: JSON.stringify(data)
-})
-  .then(res => res.json())
-  .then(response => {
-    if (response.success) {
-      alert('Reservation successful!');
-    } else {
-      alert('Reservation failed!');
-    }
-  });
-}
+// --- TRANSLATIONS ---
 
 const translations = {
   en: {
@@ -138,7 +94,11 @@ const translations = {
     terms: "terms and conditions",
     mustAgree: "You must agree to the terms to reserve a slot.",
     reserve: "Reserve",
-    termsTitle: "Terms and Conditions"
+    termsTitle: "Terms and Conditions",
+    freeParking: "Parking is free for this time segment!",
+    parkingNotice: `If the carrier is unable to drop off and pick up passengers at the time slot for which the fee was paid, this action must be performed at the <a href="https://maps.app.goo.gl/oXD6SEzjyXtm4c586" target="_blank">Autoboka</a> parking and the <a href="https://maps.app.goo.gl/kPAD6mipzZTjCCYE7" target="_blank">Puč</a> parking.`,
+    privacy: "I agree to the privacy policy",
+    privacyLink: "Read policy"
   },
   mne: {
     pickDate: "Izaberite datum",
@@ -153,7 +113,11 @@ const translations = {
     terms: "uslovima korišćenja",
     mustAgree: "Morate prihvatiti uslove da biste rezervisali termin.",
     reserve: "Rezerviši",
-    termsTitle: "Uslovi korišćenja"
+    termsTitle: "Uslovi korišćenja",
+    freeParking: "Parking je besplatan za ovaj vremenski segment!",
+    parkingNotice: `U slučaju da prevoznik nije u mogućnosti da izvrši iskrcaj i ukucaj putnika u terminu za koji je plaćena naknada, isti navedenu radnju mora izvršiti na parkingu <a href="https://maps.app.goo.gl/oXD6SEzjyXtm4c586" target="_blank">Autoboke</a> i pakringu <a href="https://maps.app.goo.gl/kPAD6mipzZTjCCYE7" target="_blank">Puč</a>.`,
+    privacy: "Slažem se sa politikom privatnosti",
+    privacyLink: "Pročitaj politiku"
   }
 };
 
@@ -223,18 +187,55 @@ function setLanguage(lang) {
   };
   const termsModalDiv = document.getElementById('terms-content');
   if (termsModalDiv) termsModalDiv.innerHTML = termsText[lang];
+
+  const noticeDiv = document.getElementById('parking-notice');
+  if (noticeDiv) noticeDiv.innerHTML = translations[lang].parkingNotice;
+
+  // Privacy checkbox
+  const privacyText = document.getElementById('privacy-text');
+  if (privacyText) privacyText.innerHTML = translations[lang].parkingNotice;
+
+  const privacyLink = document.getElementById('privacy-link');
+  if (privacyLink) privacyLink.textContent = translations[lang].privacyLink;
+
+  // Terms checkbox
+  const agreeText = document.getElementById('agree-text');
+  if (agreeText) agreeText.textContent = translations[lang].agree;
+
+  const showTerms = document.getElementById('show-terms');
+  if (showTerms) showTerms.textContent = translations[lang].terms;
 }
 
-// --- DOMContentLoaded EVENT HANDLER ---
-document.addEventListener('DOMContentLoaded', function () {
-  setLanguage('en'); // or 'mne' if you want Montenegrin by default
+// --- ISO2 to ISO3 mapping for billing_country ---
+const iso2ToIso3 = {
+  ME: "MNE", HR: "HRV", RS: "SRB", BA: "BIH", MK: "MKD", SI: "SVN", AL: "ALB", AD: "AND", AT: "AUT", BY: "BLR", BE: "BEL",
+  BG: "BGR", CZ: "CZE", DK: "DNK", EE: "EST", FI: "FIN", FR: "FRA", DE: "DEU", GR: "GRC", HU: "HUN", IS: "ISL", IE: "IRL",
+  IT: "ITA", XK: "XKX", LV: "LVA", LI: "LIE", LT: "LTU", LU: "LUX", MT: "MLT", MD: "MDA", MC: "MCO", NL: "NLD", NO: "NOR",
+  PL: "POL", PT: "PRT", RO: "ROU", RU: "RUS", SM: "SMR", SK: "SVK", ES: "ESP", SE: "SWE", CH: "CHE", UA: "UKR", GB: "GBR",
+  VA: "VAT", TR: "TUR", IL: "ISR", OTHER: "OTH"
+};
 
-  // Calculate today's date string first
+let timeSlotMap = {}; // key: "09:40 - 10:00", value: slot.id
+
+// Cookie helper for CSRF (XSRF)
+function getCookie(name) {
+  let value = `; ${document.cookie}`;
+  let parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+// --- CSRF SANCTUM: Prvo postavi cookie na load ---
+document.addEventListener('DOMContentLoaded', function () {
+  // Ključna linija za CSRF zaštitu:
+  fetch('/sanctum/csrf-cookie', { credentials: 'same-origin' });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  setLanguage('en'); // or 'mne' for default
+
+  // Today's date string
   const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  const todayStr = `${yyyy}-${mm}-${dd}`;
+  const todayStr = today.toISOString().slice(0, 10);
 
   // Set min date for the date input to today
   const reservationDateInput = document.getElementById('reservation_date');
@@ -244,69 +245,236 @@ document.addEventListener('DOMContentLoaded', function () {
     reservationDateInput.dispatchEvent(new Event('change'));
   }
 
-  // Initialize FullCalendar with validRange using todayStr
+  // Initialize FullCalendar
   const calendarEl = document.getElementById('calendar');
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'dayGridMonth',
-    headerToolbar: {
-      left: '',
-      center: 'title',
-      right: 'prev,next'
-    },
-    validRange: {
-      start: todayStr // Only allow selecting from today onwards
-    },
-    dateClick: function(info) {
-      calendar.select(info.date); // <-- This will highlight the clicked date
-      reservationDateInput.value = info.dateStr;
-      reservationDateInput.dispatchEvent(new Event('change'));
-      document.getElementById('slot-section').style.display = 'block';
-    }
-  });
-  calendar.render();
+  if (calendarEl) {
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: '',
+        center: 'title',
+        right: 'prev,next'
+      },
+      validRange: { start: todayStr },
+      dateClick: function(info) {
+        calendar.select(info.date);
+        reservationDateInput.value = info.dateStr;
+        reservationDateInput.dispatchEvent(new Event('change'));
+        document.getElementById('slot-section').style.display = 'block';
+      }
+    });
+    calendar.render();
+  }
 
-  // Fetch vehicle categories from API and populate select
+  // Populate vehicle categories
   fetch('/api/vehicle-types')
     .then(res => res.json())
     .then(data => {
       const select = document.getElementById('vehicle_type_id');
-      select.innerHTML = '<option value="">Select vehicle category</option>';
+      if (!select) return;
+      select.innerHTML = '<option id="vehicle-category-option" value="">Select vehicle category</option>';
       data.forEach(type => {
         const option = document.createElement('option');
         option.value = type.id;
         option.textContent = type.description_vehicle || type.name || type.category || type.title || `Type ${type.id}`;
+        option.setAttribute('data-price', type.price);
         select.appendChild(option);
       });
     });
 
-  // Slušaj promene na dropdown-ovima za filtraciju vremena
-  document.getElementById('arrival-time-slot').addEventListener('change', filterTimeSlots);
-  document.getElementById('departure-time-slot').addEventListener('change', filterTimeSlots);
+  // Attach listeners once
+  const arrivalSelect = document.getElementById('arrival-time-slot');
+  const departureSelect = document.getElementById('departure-time-slot');
+  if (arrivalSelect) arrivalSelect.addEventListener('change', filterTimeSlots);
+  if (departureSelect) departureSelect.addEventListener('change', filterTimeSlots);
 
-  // Kada se promeni datum, ponovo povuci dostupne slotove
-  document.getElementById('reservation_date').addEventListener('change', function () {
-    const date = this.value;
-    fetchAvailableSlotsForDate(date, function(availableSlots) {
-      populateTimeSlotSelect('arrival-time-slot', availableSlots.map(s => s.time_slot));
-      populateTimeSlotSelect('departure-time-slot', availableSlots.map(s => s.time_slot));
-      // Re-attach listeners after repopulating
-      document.getElementById('arrival-time-slot').addEventListener('change', filterTimeSlots);
-      document.getElementById('departure-time-slot').addEventListener('change', filterTimeSlots);
+  // On date change, fetch slots and populate selects
+  if (reservationDateInput) {
+    reservationDateInput.addEventListener('change', function () {
+      const date = this.value;
+      fetchAvailableSlotsForDate(date, function(availableSlots) {
+        timeSlotMap = {};
+        availableSlots.forEach(s => {
+          timeSlotMap[s.time_slot] = s.id;
+        });
+        const allTimeSlotsForDay = availableSlots.map(s => s.time_slot);
+        populateTimeSlotSelect('arrival-time-slot', allTimeSlotsForDay);
+        populateTimeSlotSelect('departure-time-slot', allTimeSlotsForDay);
+      });
     });
+  }
+
+  // Terms modal
+  const showTerms = document.getElementById('show-terms');
+  if (showTerms) {
+    showTerms.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('terms-modal').style.display = 'block';
+    });
+  }
+  const closeTerms = document.getElementById('close-terms');
+  if (closeTerms) {
+    closeTerms.addEventListener('click', function() {
+      document.getElementById('terms-modal').style.display = 'none';
+    });
+  }
+
+  // Language switch
+  const langEn = document.getElementById('lang-en');
+  const langCg = document.getElementById('lang-cg');
+  if (langEn) langEn.addEventListener('click', function() { setLanguage('en'); });
+  if (langCg) langCg.addEventListener('click', function() { setLanguage('mne'); });
+
+  // Reservation form submit
+  const reservationForm = document.getElementById('reservation-form');
+  if (reservationForm) {
+    reservationForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const agreement = document.getElementById('user_agreement');
+      const privacy = document.getElementById('privacy_agreement');
+      const agreementError = document.getElementById('agreement-error');
+      if (!agreement.checked || !privacy.checked) {
+        if (agreementError) agreementError.style.display = 'inline';
+        return;
+      } else {
+        if (agreementError) agreementError.style.display = 'none';
+      }
+      const data = Object.fromEntries(new FormData(reservationForm).entries());
+
+      // Prepare payload
+      const tempPayload = {
+        drop_off_time_slot_id: timeSlotMap[data.departure_time],
+        pick_up_time_slot_id: timeSlotMap[data.arrival_time],
+        reservation_date: data.reservation_date,
+        user_name: data.company_name,
+        country: data.country,
+        license_plate: data.registration_input,
+        vehicle_type_id: data.vehicle_type_id,
+        email: data.email,
+      };
+
+      const reserveBtn = document.getElementById('reserve-btn');
+      const paymentResult = document.getElementById('payment-result');
+      if (reserveBtn) reserveBtn.disabled = true;
+      if (paymentResult) {
+        paymentResult.style.color = "black";
+        paymentResult.textContent = "Slanje...";
+      }
+
+      // 1. Save temp data
+      let merchantTransactionId = '';
+      try {
+        const tempRes = await fetch('/api/temp-reservation', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(tempPayload)
+        });
+
+        if (!tempRes.ok) {
+          const msg = await tempRes.text();
+          throw new Error('API greška: ' + tempRes.status + ' ' + msg);
+        }
+
+        const tempResp = await tempRes.json();
+        console.log("Temp reservation response:", tempResp);
+
+        if (!tempResp.merchant_transaction_id) {
+          if (paymentResult) {
+            paymentResult.style.color = "red";
+            paymentResult.textContent = "Neuspješan upis privremenih podataka!";
+          }
+          if (reserveBtn) reserveBtn.disabled = false;
+          return;
+        }
+        merchantTransactionId = tempResp.merchant_transaction_id;
+      } catch (err) {
+        if (paymentResult) {
+          paymentResult.style.color = "red";
+          paymentResult.textContent = "Greška pri upisu privremenih podataka: " + err.message;
+        }
+        if (reserveBtn) reserveBtn.disabled = false;
+        return;
+      }
+
+      // --- KORISTI XSRF TOKEN IZ COOKIE ZA /procesiraj-placanje ---
+const xsrf = getCookie('XSRF-TOKEN');
+const formData = new FormData();
+formData.append('merchantTransactionId', merchantTransactionId);
+
+try {
+  const payRes = await fetch('/procesiraj-placanje', {
+    method: 'POST',
+    credentials: 'same-origin', // ili 'include', oba rade za isti domen
+    headers: { 
+      'Accept': 'application/json',
+      'X-XSRF-TOKEN': xsrf
+    },
+    body: formData
   });
 
-  document.getElementById('show-terms').addEventListener('click', function(e) {
-    e.preventDefault();
-    document.getElementById('terms-modal').style.display = 'block';
-  });
-  document.getElementById('close-terms').addEventListener('click', function() {
-    document.getElementById('terms-modal').style.display = 'none';
-  });
+  let payResp = {};
+  try { payResp = await payRes.json(); } catch (jsonErr) {}
 
-  document.getElementById('lang-en').addEventListener('click', function() {
-    setLanguage('en');
-  });
-  document.getElementById('lang-cg').addEventListener('click', function() {
-    setLanguage('mne');
-  });
-});
+  if (payResp.redirectUrl) {
+    window.location.href = payResp.redirectUrl;
+    return;
+  } else if (payResp.errors) {
+    if (paymentResult) {
+      paymentResult.style.color = "red";
+      paymentResult.textContent = Object.values(payResp.errors).flat().join(' ');
+    }
+  } else {
+    if (paymentResult) {
+      paymentResult.style.color = "red";
+      paymentResult.textContent = payResp.message || "Greška pri inicijalizaciji plaćanja.";
+    }
+  }
+} catch (err) {
+  if (paymentResult) {
+    paymentResult.style.color = "red";
+    paymentResult.textContent = "Greška u komunikaciji sa serverom.";
+  }
+} finally {
+  if (reserveBtn) reserveBtn.disabled = false;
+}
+}); // <-- Ova zagrada zatvara reservationForm.addEventListener('submit', ...)
+
+  // Initial fetch for default date
+  if (reservationDateInput) {
+    reservationDateInput.dispatchEvent(new Event('change'));
+  }
+
+  // Registracija velikim slovima
+  const registrationInput = document.getElementById('registration-input');
+  if (registrationInput) {
+    registrationInput.addEventListener('input', function() {
+      this.value = this.value.toUpperCase();
+    });
+  }
+}
+
+}); // <-- Ova zagrada zatvara document.addEventListener('DOMContentLoaded', ...)
+
+// --- STARO ZA CUSTOM /csrf-token ---
+// OBRISI! NIJE POTREBNO KADA KORISTIS XSRF-TOKEN COOKIE + SANCTUM
+// document.addEventListener('DOMContentLoaded', function () {
+//   fetch('/csrf-token')
+//     .then(res => res.json())
+//     .then(tokenObj => {
+//       const csrfInput = document.getElementById('csrf-token-input');
+//       if (csrfInput && tokenObj.csrf_token) {
+//         csrfInput.value = tokenObj.csrf_token;
+//         console.log('CSRF token upisan!');
+//       } else {
+//         console.warn('CSRF input ili token nisu pronađeni!');
+//       }
+//     })
+//     .catch(err => {
+//       console.error('Greška pri dohvaćanju CSRF tokena:', err);
+//     });
+// });

@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>{{ $title ?? 'Dnevni finansijski izvještaj' }}</title>
+    <title>{{ $title ?? 'Dnevni finansijski izvještaj - Kotor Bus' }}</title>
     <style>
         /* Stilizacija tabele i teksta za bolji prikaz u PDF-u */
         body { font-family: DejaVu Sans, Arial, sans-serif; }
@@ -13,7 +13,7 @@
 </head>
 <body>
     <!-- Prikaz naslova izvještaja -->
-    <h2>{{ $title ?? 'Dnevni finansijski izvještaj' }}</h2>
+    <h2>{{ $title ?? 'Dnevni finansijski izvještaj - Kotor Bus' }}</h2>
     <p>Datum: {{ $date }}</p>
     <table>
         <thead>

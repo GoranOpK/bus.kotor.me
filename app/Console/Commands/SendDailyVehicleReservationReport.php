@@ -30,12 +30,13 @@ class SendDailyVehicleReservationReport extends Command
         $emails = [
             'prihodi@kotor.me',
             'mirjana.grbovic@kotor.me',
+            'informatika@kotor.me',
             // Dodaj još adresa po potrebi
         ];
 
         // Slanje emaila svim navedenim adresama
         foreach ($emails as $email) {
-            Mail::to($email)->send(new DailyVehicleReservationReportMail($date, $reservationsByType));
+            Mail::to($email)->send(new DailyVehicleReservationReportMail($reservationsByType, $date));
         }
 
         $this->info('Dnevni izvještaj o rezervacijama po tipu vozila je poslat!');

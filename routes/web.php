@@ -6,72 +6,149 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\PaymentController;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Http\Request;
 use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
-
-
-Route::get('/admin/login', function () {
-    \Log::info('ADMIN LOGIN HIT', request()->all());
-    return 'TEST ADMIN LOGIN';
-});
+use App\Http\Controllers\AdminReadonlyController;
 
 /*
 |--------------------------------------------------------------------------
-| WEB RUTE - Ovdje su rute za stranice, forme i admin panel (nije API!)
+| WEB ROUTES
 |--------------------------------------------------------------------------
-| Ovdje ide sve što korisnik "vidi" kao HTML, forme, stranice, SPA, itd.
-| API rute NE IDU ovdje, već u routes/api.php!
+| Ovdje su rute za HTML stranice, forme i admin panel (nije API!).
+| API rute idu u routes/api.php!
 |--------------------------------------------------------------------------
 */
+Route::post('/csrf-debug', function () {
+    \Log::info('CSRF DEBUG WEB route pogodjena!');
+    return response()->json(['ok' => true])->header('X-DEMO', 'csrf-debug-match');
+});
+
+Route::get('/test-session', function() {
+    $session_id = session()->getId();
+    $session_data = session()->all();
+    return [
+        'session_id' => $session_id,
+        'session_data' => $session_data,
+        'cookies' => $_COOKIE
+    ];
+});
+
+Route::get('/test-db', function() {
+    try {
+        \DB::table('sessions')->insert([
+            'id' => uniqid(),
+            'payload' => base64_encode(serialize(['test'=>'ok'])),
+            'last_activity' => time()
+        ]);
+        return 'DB insert OK';
+    } catch (\Exception $e) {
+        return $e->getMessage();
+    }
+});
 
 // ======= JAVNE KORISNIČKE RUTE =======
 
-// Prikaz forme za plaćanje
-Route::get('/placanje', [PaymentController::class, 'showForm'])->name('payment.form');
-
-// Procesiranje plaćanja (submit forme)
-Route::post('/procesiraj-placanje', function(Request $req) {
-    Log::info('Stigao je POST na /procesiraj-placanje', $req->all());
-    return response()->json(['msg' => 'OK', 'data' => $req->all()]);
-});
-
-// Callback za online plaćanje
+// Plaćanje (HPP redirect flow)
+Route::post('/procesiraj-placanje', [PaymentController::class, 'redirectToHpp'])->name('payment.redirect-hpp');
 Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
+Route::get('/payment/cancel',  [PaymentController::class, 'cancel'])->name('payment.cancel');
+Route::get('/payment/error',   [PaymentController::class, 'error'])->name('payment.error');
 
 // Prikaz i slanje forme za podršku
 Route::get('/podrska', [SupportController::class, 'showForm'])->name('support.form');
 Route::post('/podrska', [SupportController::class, 'send'])->name('support.send');
 
-// ================== ADMIN PANEL ==================
+// === DODAJ POSEBNU RUTU ZA CSRF TOKEN (AJAX friendly) ===
+//Route::get('/csrf-token', function () {
+//	 \Log::info('CSRF TEST ROUTE REACHED');
+//    return response()->json(['csrf_token' => csrf_token()]);
+// });
 
-// Sve rute koje počinju sa "/admin"
-Route::prefix('admin')->name('admin.')->group(function () {
-    // Login forma za admina (nije zaštićeno)
-    Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
-    // Login submit sa throttle zaštitom
+// Sanctum CSRF ruta (automatski kod instalacije Sanctuma)
+Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
+
+// ======= SPA KORISNIČKI FRONT (index.html) =======
+Route::get('/', function () {
+    $path = public_path('index.html');
+    if (!file_exists($path)) {
+        abort(404, 'index.html nije pronađen!');
+    }
+    return response()->file($path);
+});
+
+// ======= EKSPPLICITNE RUTE ZA FRONTEND HTML =======
+Route::get('/admin-login.html', function () {
+    $path = public_path('admin-login.html');
+    if (!file_exists($path)) {
+        abort(404, 'admin-login.html nije pronađen!');
+    }
+    return response()->file($path);
+});
+
+Route::get('/adminpanel.html', function () {
+    $path = public_path('adminpanel.html');
+    if (!file_exists($path)) {
+        abort(404, 'adminpanel.html nije pronađen!');
+    }
+    return response()->file($path);
+});
+
+Route::get('/readonly-login.html', function () {
+    $path = public_path('readonly-login.html');
+    if (!file_exists($path)) {
+        abort(404, 'readonly-login.html nije pronađen!');
+    }
+    return response()->file($path);
+});
+
+Route::get('/control.html', function () {
+    $path = public_path('control.html');
+    if (!file_exists($path)) {
+        abort(404, 'control.html nije pronađen!');
+    }
+    return response()->file($path);
+});
+
+// ================== ADMIN PANEL SPA/AUTH LOGIKA ==================
+Route::prefix('admin')->group(function () {
+    // Admin login forma
+    Route::get('login', [LoginController::class, 'showLoginForm'])->name('admin.login');
     Route::post('login', [LoginController::class, 'login'])
-        ->name('login.submit')
+        ->name('admin.login.submit')
         ->middleware('throttle:5,1');
 
-    // Sve ispod ovoga dostupno je SAMO ulogovanom adminu ili readonly adminu (middleware: auth:admin)
-    Route::middleware(['auth:admin'])->group(function () {
-        // Logout ruta
-        Route::post('logout', [LoginController::class, 'logout'])->name('logout');
-        // Generisanje izvještaja
-        Route::get('izvjestaj', [ReportController::class, 'generate'])->name('report');
-        // Samo pravi admin (middleware: admin)
-        Route::middleware('admin')->group(function () {
-            // Dashboard prikaz
-            Route::get('dashboard', function () {
-                return view('admin.dashboard');
-            })->name('dashboard');
-            // Brisanje rezervacija
-            Route::post('brisanje', [ReservationController::class, 'delete'])->name('brisanje');
+    // Samo za ulogovane readonly admine
+    Route::middleware(['auth:readonly'])->group(function () {
+        // SPA za readonly admina (control.html)
+        Route::get('readonly', function () {
+            $path = public_path('control.html');
+            if (!file_exists($path)) {
+                abort(404, 'control.html nije pronađen!');
+            }
+            return response()->file($path);
         });
+        // Primer API ruta za readonly
+        Route::get('todays-reserved-slots', [AdminReadonlyController::class, 'todaysReservedSlots'])
+            ->name('admin.todays_reserved_slots');
     });
 
-    // TEST/DEV rute - dostupno samo u lokalnom okruženju
+    // Samo za ulogovane prave admine
+    Route::middleware(['auth:admin'])->group(function () {
+        // SPA za pravog admina (adminpanel.html)
+        Route::get('panel', function () {
+            $path = public_path('adminpanel.html');
+            if (!file_exists($path)) {
+                abort(404, 'adminpanel.html nije pronađen!');
+            }
+            return response()->file($path);
+        });
+        Route::post('logout', [LoginController::class, 'logout'])->name('admin.logout');
+        Route::get('izvjestaj', [ReportController::class, 'generate'])->name('admin.report');
+        Route::post('brisanje', [ReservationController::class, 'delete'])->name('admin.brisanje');
+        // Dodaj još admin-only rute po potrebi
+    });
+
+    // TEST/DEV rute - samo lokalno okruženje
     if (app()->environment('local')) {
         Route::get('test-dnevni-finansijski', [ReportController::class, 'sendDailyFinance']);
         Route::get('test-dnevni-vozila', [ReportController::class, 'sendDailyVehicleReservations']);
@@ -82,48 +159,35 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('test-payment', [PaymentController::class, 'test']);
     }
 
-    // CATCH-ALL ZA ADMIN PANEL (npr. ako koristiš SPA admin panel)
-    // Ovo mora biti na kraju admin grupe!
+    // CATCH-ALL ZA ADMIN PANEL SPA
     Route::get('/{any}', function () {
-        return response()->file(public_path('index.html'));
+        // SPA rutiranje: ako je ulogovan admin vraća panel, readonly vraća control, ako nije - login
+        if (auth('admin')->check()) {
+            $path = public_path('adminpanel.html');
+        } elseif (auth('readonly')->check()) {
+            $path = public_path('control.html');
+        } else {
+            $path = public_path('admin-login.html');
+        }
+        if (!file_exists($path)) {
+            abort(404, basename($path) . ' nije pronađen!');
+        }
+        return response()->file($path);
     })->where('any', '.*');
 });
 
-// Test CSRF stranica
-Route::get('/test-csrf', function () {
-    return view('test-csrf');
-});
-
-// Ovu rutu Laravel automatski dodaJE pri instalaciji Sanctuma
-Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
-
-// Welcome stranica (početna)
-Route::get('/', function () {
-    return view('welcome');
-});
-
-// POST catch-all za web.php, PRE GET catch-all
-Route::post('/{any}', function () {
-    abort(404, 'POST ruta ne postoji');
-})->where('any', '^(?!api/).*');
-
-// ======= EKSPPLICITNA RUTA ZA ADMINCP.HTML =======
-// Ova ruta MORA biti iznad globalnog catch-all-a!
-// Ako postoji public/admincp.html, biće vraćen taj fajl
-Route::get('/admincp.html', function () {
-    $path = public_path('admincp.html');
-    if (!file_exists($path)) {
-        abort(404, 'admincp.html nije pronađen!');
-    }
-    return response()->file($path);
-});
-
-// ======= GLOBAL GET catch-all (npr. za SPA podršku) =======
-// Ovo MORA biti poslednje u fajlu!
+// ======= GLOBAL GET catch-all (SPA podrška) =======
+// Catch-all za GET (SPA)
 Route::get('/{any}', function () {
-    $path = base_path('index.html');
+    $path = public_path('index.html');
     if (!file_exists($path)) {
-        abort(404, 'index.html not found');
+        abort(404, 'index.html nije pronađen!');
     }
     return response()->file($path);
 })->where('any', '^(?!api\/).*');
+
+// Fallback za ostalo
+Route::fallback(function () {
+    \Log::info('FALLBACK route triggered! Method: ' . request()->method() . ', URI: ' . request()->path());
+    return response('Route not found', 404);
+});

@@ -11,14 +11,18 @@ class YearlyFinanceReportMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $data;
+    public $year;
+    public $financePerMonth;
+    public $totalFinance;
 
     /**
      * Konstruktor - prosljeđuje podatke za izvještaj
      */
-    public function __construct($data)
+    public function __construct($year, $financePerMonth, $totalFinance)
     {
-        $this->data = $data;
+        $this->year = $year;
+        $this->financePerMonth = $financePerMonth;
+        $this->totalFinance = $totalFinance;
     }
 
     /**
@@ -26,11 +30,15 @@ class YearlyFinanceReportMail extends Mailable
      */
     public function build()
     {
-        // Generišemo PDF koristeći odgovarajući blade šablon iz resources/views/reports
-        $pdf = Pdf::loadView('reports.yearly_finance_report_pdf', $this->data);
+        // Prosleđujemo podatke kao array sa ključevima koje koristiš u blade-u
+        $pdf = Pdf::loadView('reports.yearly_finance_report_pdf', [
+            'year' => $this->year,
+            'financeData' => $this->financePerMonth,
+            'totalFinance' => $this->totalFinance,
+        ]);
 
         return $this->subject('Godišnji finansijski izvještaj')
-            ->text('emails.empty')
+            ->text('emails.empty') // obavezno napravi prazan view emails/empty.blade.php
             ->attachData(
                 $pdf->output(),
                 'godisnji_finansijski_izvjestaj.pdf',

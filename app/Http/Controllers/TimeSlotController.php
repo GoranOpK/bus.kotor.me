@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\TimeSlot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Reservation;
 
 class TimeSlotController extends Controller
 {
@@ -119,5 +120,47 @@ class TimeSlotController extends Controller
         }
 
         return response()->json(['available' => (bool)$row->available]);
+    }
+
+    /**
+     * Vraća samo slotove za današnji dan koji imaju rezervacije, sortirano po intervalu.
+     * (za prikaz readonly adminu)
+     */
+    public function reservedSlotsToday()
+    {
+        $date = now()->format('Y-m-d');
+        // Svi slotovi u bazi
+        $slots = TimeSlot::orderBy('time_slot')->get();
+        // Svi slotovi koji su rezervisani za danas (bilo kao dolazak ili odlazak)
+        $reservations = Reservation::with(['vehicleType'])
+            ->where('reservation_date', $date)
+            ->get();
+
+        // Grupisanje po slot ID-ju (za oba slota: drop_off i pick_up)
+        $slotsWithReservations = [];
+
+        foreach ($slots as $slot) {
+            // Pronađi rezervacije za ovaj slot (bilo kao drop_off ili pick_up)
+            $slotReservations = $reservations->filter(function($r) use ($slot) {
+                return $r->drop_off_time_slot_id === $slot->id || $r->pick_up_time_slot_id === $slot->id;
+            });
+
+            if ($slotReservations->count() > 0) {
+                // Pripremi podatke za prikaz
+                $slotsWithReservations[] = [
+                    'interval' => $slot->time_slot,
+                    'reservations' => $slotReservations->map(function($r) {
+                        return [
+                            'vehicle_type' => optional($r->vehicleType)->description_vehicle ?? 'Nepoznat tip',
+                            'license_plate' => $r->license_plate,
+                        ];
+                    })->unique('license_plate')->values()->all(), // da ne dupliramo istu tablicu
+                ];
+            }
+        }
+
+        return response()->json([
+            'data' => $slotsWithReservations
+        ]);
     }
 }

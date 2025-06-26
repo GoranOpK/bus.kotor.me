@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reservation;
+use App\Models\TempData;
 use App\Models\TimeSlot;
 use App\Services\SlotService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PaymentReservationConfirmationMail;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReservationController extends Controller
 {
@@ -34,7 +36,90 @@ class ReservationController extends Controller
         return response()->json($reservation, 200);
     }
 
-    // Kreiranje nove rezervacije (API)
+    /**
+     * Kreiranje nove rezervacije iz TEMP_DATA koristeći merchant_transaction_id
+     * Ova metoda upisuje podatke iz temp_data u reservations, a zatim briše red iz temp_data.
+     * Poziva se nakon uspješnog plaćanja.
+     */
+    public function storeFromTemp(Request $request)
+    {
+        \Log::info('storeFromTemp pozvan', ['request' => $request->all()]);
+        $merchantTransactionId = $request->input('merchant_transaction_id');
+        if (!$merchantTransactionId) {
+            return response()->json(['success' => false, 'message' => 'merchant_transaction_id je obavezan!'], 422);
+        }
+
+        $temp = TempData::where('merchant_transaction_id', $merchantTransactionId)->first();
+        if (!$temp) {
+            return response()->json(['success' => false, 'message' => 'Privremeni podaci nisu pronađeni.'], 404);
+        }
+
+        $date = $temp->reservation_date;
+        $reg = $temp->license_plate;
+        $dropOffSlot = $temp->drop_off_time_slot_id;
+        $pickUpSlot = $temp->pick_up_time_slot_id;
+
+        // Zabrani duplikat za isti dropoff slot
+        $dropoffExists = Reservation::where([
+            ['license_plate', $reg],
+            ['reservation_date', $date],
+            ['drop_off_time_slot_id', $dropOffSlot]
+        ])->exists();
+
+        if ($dropoffExists) {
+            $temp->delete();
+            return response()->json([
+                'success' => false,
+                'message' => "Već postoji rezervacija za ovu registarsku oznaku, slot i dan (drop-off)."
+            ], 422);
+        }
+
+        // Zabrani duplikat za isti pickup slot
+        $pickupExists = Reservation::where([
+            ['license_plate', $reg],
+            ['reservation_date', $date],
+            ['pick_up_time_slot_id', $pickUpSlot]
+        ])->exists();
+
+        if ($pickupExists) {
+            $temp->delete();
+            return response()->json([
+                'success' => false,
+                'message' => "Već postoji rezervacija za ovu registarsku oznaku, slot i dan (pick-up)."
+            ], 422);
+        }
+
+        // Pozovi stored proceduru (ona brine o dostupnosti i ažuriranju slotova)
+        try {
+            \DB::statement('CALL AddReservation(?, ?, ?, ?, ?, ?, ?, ?)', [
+                $temp->drop_off_time_slot_id,
+                $temp->pick_up_time_slot_id,
+                $temp->reservation_date,
+                $temp->user_name,
+                $temp->country,
+                $temp->license_plate,
+                $temp->vehicle_type_id,
+                $temp->email
+            ]);
+        } catch (\Exception $e) {
+
+                \Log::error('Greška u AddReservation proceduri preko storeFromTemp', [
+                'merchantTransactionId' => $merchantTransactionId,
+                'message' => $e->getMessage()
+            ]);
+            $temp->delete();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        $temp->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reservation created successfully'
+        ], 201);
+    }
+
+    // Kreiranje nove rezervacije (klasičan način, direktan upis)
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -49,34 +134,36 @@ class ReservationController extends Controller
             'status'                => 'sometimes|string|in:pending,paid',
         ]);
 
-        // PRAVILO 1: Najviše 3 rezervacije za istu tablicu, datum i drop-off slot
         $date = $validated['reservation_date'];
         $reg = $validated['license_plate'];
         $dropOffSlot = $validated['drop_off_time_slot_id'];
+        $pickUpSlot = $validated['pick_up_time_slot_id'];
 
-        $count = \App\Models\Reservation::where([
+        // Zabrani duplikat za isti dropoff slot
+        $dropoffExists = Reservation::where([
             ['license_plate', $reg],
             ['reservation_date', $date],
             ['drop_off_time_slot_id', $dropOffSlot]
-        ])->count();
+        ])->exists();
 
-        if ($count >= 3) {
+        if ($dropoffExists) {
             return response()->json([
                 'success' => false,
-                'message' => "Dozvoljeno je najviše 3 rezervacije za ovu registarsku oznaku, slot i dan."
+                'message' => "Već postoji rezervacija za ovu registarsku oznaku, slot i dan (drop-off)."
             ], 422);
         }
 
-        // PRAVILO 2: Rezervacija moguća najkasnije minut prije termina drop-off
-        $slot = \App\Models\TimeSlot::find($dropOffSlot);
-        if (!$slot) {
-            return response()->json(['success' => false, 'message' => 'Nepostojeći termin!'], 422);
-        }
-        $dateTime = \Illuminate\Support\Carbon::parse($date . ' ' . $slot->start_time);
-        if (now()->diffInMinutes($dateTime, false) < 1) {
+        // Zabrani duplikat za isti pickup slot
+        $pickupExists = Reservation::where([
+            ['license_plate', $reg],
+            ['reservation_date', $date],
+            ['pick_up_time_slot_id', $pickUpSlot]
+        ])->exists();
+
+        if ($pickupExists) {
             return response()->json([
                 'success' => false,
-                'message' => 'Rezervacija je moguća najkasnije minut prije termina.'
+                'message' => "Već postoji rezervacija za ovu registarsku oznaku, slot i dan (pick-up)."
             ], 422);
         }
 
@@ -93,7 +180,6 @@ class ReservationController extends Controller
                 $validated['email']
             ]);
         } catch (\Exception $e) {
-            // Vrati poruku greške iz procedure
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
@@ -105,13 +191,11 @@ class ReservationController extends Controller
 
     // Rezervacija iz frontenda (možeš koristiti samo store, nema potrebe za duplikatom!)
     public function reserve(Request $request)
-     {
-       // \Log::info('Reserve metoda pozvana!');
-        // Možeš pozvati $this->store($request) ili, još bolje, koristi samo jednu metodu (store)
+    {
         return $this->store($request);
-       // return response()->json(['message' => 'Radi!'], 200);
     }
 
+    // Slanje računa i potvrde korisniku na email (ručno)
     public function sendInvoiceToUser($id)
     {
         $reservation = Reservation::findOrFail($id);
@@ -120,9 +204,8 @@ class ReservationController extends Controller
             return response()->json(['error' => 'Email adresa nije pronađena za ovu rezervaciju.'], 422);
         }
 
-        // GENERIŠI PDF-ove! (ovo je samo primjer)
-        $invoicePdf = $this->generateInvoicePdf($reservation); // metoda koju trebaš napraviti
-        $confirmationPdf = $this->generateConfirmationPdf($reservation); // metoda koju trebaš napraviti
+        $invoicePdf = $this->generateInvoicePdf($reservation);
+        $confirmationPdf = $this->generateConfirmationPdf($reservation);
 
         Mail::to($reservation->email)->send(
             new PaymentReservationConfirmationMail(
@@ -134,6 +217,8 @@ class ReservationController extends Controller
 
         return response()->json(['success' => 'Invoice and payment confirmation sent to user email.']);
     }
+
+    // Ažuriranje rezervacije (npr. postavi status na paid i šalji mail)
     public function update(Request $request, $id)
     {
         $reservation = Reservation::findOrFail($id);
@@ -152,20 +237,22 @@ class ReservationController extends Controller
 
         $reservation->update($validated);
 
-        // Možeš dodati slanje maila kad je status promijenjen u 'paid'
+        // Šalji mail kad je status promijenjen u 'paid'
         if (
-        isset($validated['status']) &&
-        $validated['status'] === 'paid' &&
-        $reservation->email
-    ) {
-        $userName = $reservation->user_name;
-        $invoicePdf = $this->generateInvoicePdf($reservation); // implementiraj ovu funkciju
-        $confirmationPdf = $this->generateConfirmationPdf($reservation); // implementiraj ovu funkciju
+            isset($validated['status']) &&
+            $validated['status'] === 'paid' &&
+            $reservation->email
+        ) {
+            $userName = $reservation->user_name;
+            $invoicePdf = $this->generateInvoicePdf($reservation);
+            $confirmationPdf = $this->generateConfirmationPdf($reservation);
 
-        Mail::to($reservation->email)->send(
-            new PaymentReservationConfirmationMail($userName, $invoicePdf, $confirmationPdf)
-        );
-    }
+            Mail::to($reservation->email)->send(
+                new PaymentReservationConfirmationMail($userName, $invoicePdf, $confirmationPdf)
+            );
+        }
+
+        return response()->json(['success' => 'Reservation updated successfully.']);
     }
 
     public function destroy($id)
@@ -193,5 +280,21 @@ class ReservationController extends Controller
         $date = $request->input('date', now()->toDateString());
         $slots = $this->slotService->getSlotsForDate($date);
         return response()->json($slots);
+    }
+
+    // --- PDF GENERATORI ---
+
+    protected function generateInvoicePdf($reservation)
+    {
+        return Pdf::loadView('reports.reservation_invoice_pdf', [
+            'reservation' => $reservation
+        ])->output();
+    }
+
+    protected function generateConfirmationPdf($reservation)
+    {
+        return Pdf::loadView('reports.reservation_confirmation_pdf', [
+            'reservation' => $reservation
+        ])->output();
     }
 }

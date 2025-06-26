@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kotorbus Admin Login</title>
+  <link rel="stylesheet" href="src/style.css">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .main-content {
+      flex: 1 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .admin-login-container {
+      max-width: 350px;
+      margin: 40px auto;
+      padding: 24px 16px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      box-sizing: border-box;
+      display: block;
+    }
+    .admin-login-container input[type="text"],
+    .admin-login-container input[type="email"],
+    .admin-login-container input[type="password"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+    .admin-login-container h2 {
+      text-align: center;
+    }
+    .admin-login-container button {
+      width: 100%;
+      padding: 14px 0;
+      font-size: 18px;
+      background: #9c1420;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .error {
+      color: #c00;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    footer {
+      flex-shrink: 0;
+      width: 100%;
+      text-align: center;
+      background: #9c1420;
+      color: white;
+      padding: 16px 0;
+      margin: 0;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <header style="display: flex; align-items: center; justify-content: space-between;">
+    <div style="flex:1;"></div>
+    <img src="src/logo.png" alt="Kotorbus Logo" style="display:block; margin:auto;">
+    <div style="flex:1; display:flex; justify-content: flex-end; gap:10px; align-items:center;">
+      <img src="src/gb.png" alt="English" id="lang-en" style="width:32px; height:32px; cursor:pointer;">
+      <img src="src/mne.png" alt="Crnogorski" id="lang-cg" style="width:32px; height:32px; cursor:pointer;">
+    </div>
+  </header>
+
+  <div class="main-content">
+    <div class="admin-login-container">
+      <h2>
+        <img src="src/bidon.svg" alt="bidon" style="width:1em; height:1em; vertical-align:-0.15em;">
+        Bidonkaktus Panel 🌵
+      </h2>
+      <div id="login-error" class="error" style="display:none;"></div>
+      <form id="admin-login-form" autocomplete="off">
+        <input type="email" id="username" name="username" placeholder="Email" required autofocus>
+        <input type="password" id="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  </div>
+  
+  <footer>
+    <img src="src/logoop.png" alt="OpKotor" style="height:80px;">
+    <p>Bidonkaktus 🌵 &copy; 2025 Kotorbus</p>
+  </footer>
+  <script>
+    document.getElementById('admin-login-form').onsubmit = async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('login-error');
+      errorDiv.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: username, password }) // Laravel očekuje 'email'
+        });
+
+        const contentType = res.headers.get('content-type') || '';
+        let data;
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          // Može biti HTML error page
+          const text = await res.text();
+          errorDiv.textContent = 'Server error: ' + text;
+          errorDiv.style.display = 'block';
+          return;
+        }
+
+        if (data.token) {
+          localStorage.setItem('admin_token', data.token);
+          window.location.href = 'adminpanel.html';
+        } else {
+          errorDiv.textContent = data.message || 'Login failed!';
+          errorDiv.style.display = 'block';
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Greška u vezi sa serverom!';
+        errorDiv.style.display = 'block';
+      }
+    };
+  </script>
+</body>
+</html>
