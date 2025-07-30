@@ -32,6 +32,18 @@ return [
             'driver' => 'session', // koristi PHP sesije za autentikaciju
             'provider' => 'admins', // koristi provider admins (vidi ispod)
         ],
+        'api' => [
+            'driver' => 'token', // ili 'sanctum' ili 'jwt' ako koristiš neki paket
+            'provider' => 'admins',
+        ],
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'admins',
+        ],
+        'readonly' => [
+            'driver' => 'session',
+            'provider' => 'admins',
+        ],
     ],
 
     /*

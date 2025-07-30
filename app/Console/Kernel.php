@@ -25,23 +25,23 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // Dnevni finansijski izvještaj – svaki dan u 23:59
-        $schedule->command('reports:daily-finance')->dailyAt('23:59');
+        // Dnevni finansijski izvještaj – svaki dan u 20:30
+        $schedule->command('reports:daily-finance')->dailyAt('20:30');
 
-        // Mjesečni finansijski izvještaj – 1. u mjesecu u 00:20 (za prethodni mjesec)
-        $schedule->command('reports:monthly-finance')->monthlyOn(1, '00:20');
+        // Mjesečni finansijski izvještaj – 1. u mjesecu u 06:30 (za prethodni mjesec)
+        $schedule->command('reports:monthly-finance')->monthlyOn(1, '06:30');
 
-        // Godišnji finansijski izvještaj – 1. januara u 00:30 (za prethodnu godinu)
-        $schedule->command('reports:yearly-finance')->yearlyOn(1, 1, '00:30');
+        // Godišnji finansijski izvještaj – 1. januara u 06:30 (za prethodnu godinu)
+        $schedule->command('reports:yearly-finance')->yearlyOn(1, 1, '06:30');
 
         // Dnevni izvještaj o rezervacijama po tipu vozila – svaki dan u 23:55
         $schedule->command('reports:daily-vehicle-reservations')->dailyAt('23:55');
 
-        // Mjesečni izvještaj o rezervacijama po tipu vozila – 1. u mjesecu u 00:25 (za prethodni mjesec)
-        $schedule->command('reports:monthly-vehicle-reservations')->monthlyOn(1, '00:25');
+        // Mjesečni izvještaj o rezervacijama po tipu vozila – 1. u mjesecu u 06:31 (za prethodni mjesec)
+        $schedule->command('reports:monthly-vehicle-reservations')->monthlyOn(1, '06:31');
 
-        // Godišnji izvještaj o rezervacijama po tipu vozila – 1. januara u 00:35 (za prethodnu godinu)
-        $schedule->command('reports:yearly-vehicle-reservations')->yearlyOn(1, 1, '00:35');
+        // Godišnji izvještaj o rezervacijama po tipu vozila – 1. januara u 06:31 (za prethodnu godinu)
+        $schedule->command('reports:yearly-vehicle-reservations')->yearlyOn(1, 1, '06:31');
     }
 
     /**

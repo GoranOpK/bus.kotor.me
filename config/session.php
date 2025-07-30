@@ -145,7 +145,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN'),
+    'domain' => env('SESSION_DOMAIN', null),
 
     /*
     |--------------------------------------------------------------------------
@@ -158,7 +158,6 @@ return [
     */
 
     'secure' => env('SESSION_SECURE_COOKIE', true), // treba biti true za HTTPS
-    'same_site' => 'lax', // ili 'strict' (zavisi od tvog frontenda)
 
     /*
     |--------------------------------------------------------------------------
@@ -182,10 +181,8 @@ return [
     |
     */
 
-    'same_site' => env('SESSION_SAME_SITE', 'none'),
-    'secure' => env('SESSION_SECURE_COOKIE', true),
-    'domain' => env('SESSION_DOMAIN', null),
-    
+    'same_site' => 'lax',
+
     /*
     |--------------------------------------------------------------------------
     | Partitioned Cookies (Napredno)

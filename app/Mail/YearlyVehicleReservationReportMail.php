@@ -11,14 +11,16 @@ class YearlyVehicleReservationReportMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $data;
+    public $year;
+    public $reservationsByType;
 
     /**
      * Konstruktor - prosljeđuje podatke za izvještaj
      */
-    public function __construct($data)
+    public function __construct($year, $reservationsByType)
     {
-        $this->data = $data;
+        $this->year = $year;
+        $this->reservationsByType = $reservationsByType;
     }
 
     /**
@@ -26,11 +28,14 @@ class YearlyVehicleReservationReportMail extends Mailable
      */
     public function build()
     {
-        // Generišemo PDF koristeći odgovarajući blade šablon iz resources/views/reports
-        $pdf = Pdf::loadView('reports.yearly_vehicle_reservation_report_pdf', $this->data);
+        // Prosleđujemo podatke kao array sa jasnim ključevima
+        $pdf = Pdf::loadView('reports.yearly_vehicle_reservation_report_pdf', [
+            'year' => $this->year,
+            'reservationsByType' => $this->reservationsByType,
+        ]);
 
         return $this->subject('Godišnji izvještaj o rezervacijama po tipu vozila')
-            ->text('emails.empty')
+            ->view('emails.blank') // koristi prazan view
             ->attachData(
                 $pdf->output(),
                 'godisnji_izvjestaj_rezervacije_po_voznom_parku.pdf',

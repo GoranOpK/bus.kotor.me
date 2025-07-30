@@ -10,14 +10,23 @@
 </head>
 <body>
     <!-- Pozdrav korisniku -->
-    <p>Dear {{ $reservation->user_name }},</p>
-    <!-- Poruka korisniku da su u prilogu dva dokumenta -->
-    <p>Thank you for your payment. Attached to this email you will find two documents:</p>
+    <p>Dear {{ $user_name }},</p>
+
+    <!-- Poruka o potvrdi rezervacije -->
+    <p>Your reservation has been <strong>successfully confirmed</strong>!</p>
+    
+    <!-- (Ovdje možeš dodati dodatne podatke o rezervaciji po potrebi) -->
+    {{-- 
     <ul>
-        <li><strong>Invoice</strong></li>
-        <li><strong>Payment Confirmation</strong></li>
+        <li>Reservation number: {{ $reservation_number ?? '' }}</li>
+        <li>Date: {{ $reservation_date ?? '' }}</li>
     </ul>
-    <p>Please keep them for your records.</p>
+    --}}
+
+    <!-- Poruka korisniku da je u prilogu faktura -->
+    <p>Attached to this email you will find your <strong>Invoice</strong> for the payment.</p>
+    <p>Please keep it for your records.</p>
+    
     <!-- Pozdrav od opštine -->
     <p>Best regards,<br>
     Municipality of Kotor</p>

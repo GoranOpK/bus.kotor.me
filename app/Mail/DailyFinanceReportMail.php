@@ -11,31 +11,36 @@ class DailyFinanceReportMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $data;
+    public $pdf;
+    public $periodLabel;
+    public $periodString;
+    public $total;
+    public $count;
+    public $date;
 
     /**
-     * Konstruktor - prosljeđuje podatke za izvještaj
+     * Konstruktor prima podatke za izvještaj.
+     *
+     * @param string $date Datum izvještaja
+     * @param float $total Finansijski zbir
+     * @param int $count  Broj rezervacija
      */
-    public function __construct($data)
+    public function __construct($date, $total, $count)
     {
-        $this->data = $data;
+        $this->date = $date;
+        $this->total = $total;
+        $this->count = $count;
     }
 
-    /**
-     * Priprema email sa dnevnim finansijskim izvještajem u pdf-u
-     */
     public function build()
     {
-        // Generišemo PDF koristeći odgovarajući blade šablon iz resources/views/reports
-        $pdf = Pdf::loadView('reports.daily_finance_report_pdf', $this->data);
-
-        // Vraćamo mail sa subject-om i pdf-om u atačmentu
-        return $this->subject('Dnevni finansijski izvještaj')
-            ->text('emails.empty') // Poruka u tijelu maila (možeš promijeniti po potrebi)
-            ->attachData(
-                $pdf->output(), 
-                'dnevni_finansijski_izvjestaj.pdf', 
-                ['mime' => 'application/pdf']
-            );
+        $pdf = Pdf::loadView('reports.daily_finance_report_pdf', [
+            'total' => $this->total,
+            'count' => $this->count,
+            'date' => $this->date,
+        ]);
+        return $this->subject('Dnevni finansijski izvještaj - Kotor Bus')
+            ->view('emails.blank')
+            ->attachData($pdf->output(), 'daily-finance-report.pdf');
     }
 }

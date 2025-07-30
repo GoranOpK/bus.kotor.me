@@ -10,7 +10,6 @@ class LoginController extends Controller
 {
     public function showLoginForm()
     {
-        //dd('Login controller radi!');
         return view('admin.auth.login'); // Pogled za admin login formu
     }
 

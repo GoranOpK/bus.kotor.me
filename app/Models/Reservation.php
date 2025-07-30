@@ -19,6 +19,12 @@ class Reservation extends Model
         'vehicle_type_id',          // ID tipa vozila
         'email',                    // Email korisnika
         'status',                   // Status rezervacije (npr. pending, confirmed, cancelled)
+        'merchant_transaction_id',  // Merchant Transaction ID
+        'fiscal_jir',               // JIKR
+        'fiscal_ikof',              // IKOF
+        'fiscal_qr',                // QR kod (URL)
+        'fiscal_operator',          // ENUIdentifier
+        'fiscal_date',              // Datum fiskalizacije
     ];
 
     protected $casts = [

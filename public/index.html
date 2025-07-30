@@ -3,46 +3,111 @@
 <head>
   <meta charset="UTF-8">
   <title>Kotorbus Reservation</title>
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+  <!-- CSRF meta tag for Laravel POST protection -->
+  <!-- OVAJ TAG SE NE KORISTI AKO NIJE BLADE: <meta name="csrf-token" content="{{ csrf_token() }}"> -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
   <link rel="stylesheet" href="src/style.css">
   
 </head>
 
 <body>
-  
   <header style="display: flex; align-items: center; justify-content: space-between;">
-  <div style="flex:1;"></div>
-  <img src="src/logo.png" alt="Kotorbus Logo" style="display:block; margin:auto;">
-  <div style="flex:1; display:flex; justify-content: flex-end; gap:10px; align-items:center;">
-    <img src="src/gb.png" alt="English" id="lang-en" style="width:32px; height:32px; cursor:pointer;">
-    <img src="src/mne.png" alt="Crnogorski" id="lang-cg" style="width:32px; height:32px; cursor:pointer;">
-  </div>
-</header>
+    <div style="flex:1;"></div>
+    <img src="src/logo.png" alt="Kotorbus Logo" style="display:block; margin:auto;">
+    <div style="flex:1; display:flex; justify-content: flex-end; gap:10px; align-items:center;">
+      <img src="src/gb.png" alt="English" id="lang-en" style="width:32px; height:32px; cursor:pointer;">
+      <img src="src/mne.png" alt="Crnogorski" id="lang-cg" style="width:32px; height:32px; cursor:pointer;">
+    </div>
+  </header>
 
-  <div class="main-container" style="display: flex; gap: 40px; align-items: flex-start;">
+  <div class="main-container">
     <div id="calendar"></div>
-    <div id="slot-section" style="display:block; min-width:320px;">
-      <input type="date" id="reservation_date" />
-      <h3 id="pick-date-label">Pick a date</h3>
-      <p id="arrival-label">Arrival time</p>
-      <select id="arrival-time-slot"></select>
-      <p id="departure-label">Departure time</p>
-      <select id="departure-time-slot"></select>
-      <input type="text" id="company_name" placeholder="Company name" required>
-      <input type="text" id="country-input" placeholder="Country" required>
-      <input type="text" id="registration-input" placeholder="Registration plates" required>
-      <input type="email" id="email" placeholder="Email" required>
-      <select id="vehicle_type_id" required>
-        <option id="vehicle-category-option" value="">Select vehicle category</option>
-      </select>
-      <label id="agree-label" style="display:block; margin:10px 0;">
-        <input type="checkbox" id="user_agreement" required>
-        <span id="agree-text">I agree to the</span>
-        <a href="#" id="show-terms">terms and conditions</a>.
-      </label>
-      <span id="agreement-error" style="color:red; display:none;">You must agree to the terms to reserve a slot.</span>
-      <button id="reserve-btn" onclick="reserveSlot()">Reserve</button>
+    <div id="slot-section">
+      <form id="reservation-form" autocomplete="off">
+        <input type="date" id="reservation_date" name="reservation_date" required />
+        <h3 id="pick-date-label">Pick a date</h3>
+        <p id="arrival-label">Arrival time</p>
+        <select id="arrival-time-slot" name="arrival_time" required></select>
+        <p id="departure-label">Departure time</p>
+        <select id="departure-time-slot" name="departure_time" required></select>
+        <input type="text" id="company_name" name="company_name" placeholder="Company name" required>
+        <select id="country-input" name="country" required>
+          <option value="">Select country</option>
+          <option value="ME">ME - Montenegro</option>
+          <option value="HR">HR - Croatia</option>
+          <option value="RS">RS - Serbia</option>
+          <option value="BA">BA - Bosnia and Herzegovina</option>
+          <option value="MK">MK - North Macedonia</option>
+          <option value="SI">SI - Slovenia</option>
+          <option value="AL">AL - Albania</option>
+          <option value="AD">AD - Andorra</option>
+          <option value="AT">AT - Austria</option>
+          <option value="BY">BY - Belarus</option>
+          <option value="BE">BE - Belgium</option>
+          <option value="BG">BG - Bulgaria</option>
+          <option value="CZ">CZ - Czech Republic</option>
+          <option value="DK">DK - Denmark</option>
+          <option value="EE">EE - Estonia</option>
+          <option value="FI">FI - Finland</option>
+          <option value="FR">FR - France</option>
+          <option value="DE">DE - Germany</option>
+          <option value="GR">GR - Greece</option>
+          <option value="HU">HU - Hungary</option>
+          <option value="IS">IS - Iceland</option>
+          <option value="IE">IE - Ireland</option>
+          <option value="IT">IT - Italy</option>
+          <option value="XK">XK - Kosovo</option>
+          <option value="LV">LV - Latvia</option>
+          <option value="LI">LI - Liechtenstein</option>
+          <option value="LT">LT - Lithuania</option>
+          <option value="LU">LU - Luxembourg</option>
+          <option value="MT">MT - Malta</option>
+          <option value="MD">MD - Moldova</option>
+          <option value="MC">MC - Monaco</option>
+          <option value="NL">NL - Netherlands</option>
+          <option value="NO">NO - Norway</option>
+          <option value="PL">PL - Poland</option>
+          <option value="PT">PT - Portugal</option>
+          <option value="RO">RO - Romania</option>
+          <option value="RU">RU - Russia</option>
+          <option value="SM">SM - San Marino</option>
+          <option value="SK">SK - Slovakia</option>
+          <option value="ES">ES - Spain</option>
+          <option value="SE">SE - Sweden</option>
+          <option value="CH">CH - Switzerland</option>
+          <option value="UA">UA - Ukraine</option>
+          <option value="GB">GB - United Kingdom</option>
+          <option value="VA">VA - Vatican City</option>
+          <option value="TR">TR - Turkey</option>
+          <option value="IL">IL - Israel</option>
+          <option value="OTHER">Other</option>
+        </select>
+        <input type="text" id="registration-input" name="registration_input" placeholder="Registration plates" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');">
+        <input type="email" id="email" name="email" placeholder="Email" required>
+        <select id="vehicle_type_id" name="vehicle_type_id" required>
+          <option id="vehicle-category-option" value="">Select vehicle category</option>
+        </select>
+        <label id="privacy-label" style="display:block; margin:10px 0;">
+          <input type="checkbox" id="privacy_agreement" required>
+          <span id="privacy-text"></span>
+        </label>
+        <label id="agree-label" style="display:block; margin:10px 0;">
+          <input type="checkbox" id="user_agreement" required>
+          <span id="agree-text"></span>
+          <a href="#" id="show-terms">terms and conditions</a>.
+        </label>
+        <span id="agreement-error" style="color:red; display:none;">You must agree to the terms to reserve a slot.</span>
+        <span id="free-parking-msg" style="display:none; color:green; font-weight:bold;">Parking is free for this time segment!</span>
+        <button id="reserve-btn" type="submit">Reserve</button>
+        <div id="payment-result" style="color:red; margin-top:10px;"></div>
+      </form>
+      <!-- Hidden payment form, _token input NIJE potreban za SPA JS AJAX submit -->
+      <form id="payment-init-form" method="POST" action="/procesiraj-placanje" style="display:none;">
+        <input type="hidden" name="merchantTransactionId" id="payment-merchant-id" value="">
+        <!-- <input type="hidden" name="_token" id="payment-csrf" value=""> -->
+      </form>
     </div>
   </div>
 
@@ -56,11 +121,52 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal for Free Reservation Success -->
+  <div id="free-reservation-modal" style="display: none;">
+    <div class="modal-content" style="text-align: center; max-width: 500px;">
+      <span class="close" id="close-free-reservation">&times;</span>
+      <div style="margin: 20px 0;">
+        <h2 id="free-reservation-title" style="color: #9c1420; margin-bottom: 15px;">Free reservation successful!</h2>
+        <p id="free-reservation-text" style="font-size: 16px; margin-bottom: 20px; color: #000;">
+          Your free reservation has been successfully created.
+        </p>
+        <div style="background-color: #f8f8f8; border: 2px solid #9c1420; border-radius: 8px; padding: 15px; margin: 20px 0;">
+          <p id="free-reservation-confirmation" style="margin: 0; font-weight: bold; color: #000;">
+            ✅ Confirmation has been sent to your email
+          </p>
+          <p id="free-reservation-check-email" style="margin: 5px 0 0 0; font-size: 14px; color: #666;">
+            Check your email address for reservation details
+          </p>
+        </div>
+        <div style="margin-top: 25px;">
+          <button id="close-free-reservation-btn" style="background-color: #9c1420; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px;">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
   
   <footer>
     <img src="src/logoop.png" alt="OpKotor" style="height:80px;">
-    <p>Bidonkaktus 🌵 &copy; 2025 Kotorbus</p>
+    <p>Opština Kotor 🌵 &copy; 2025 Kotorbus</p>
   </footer>
+  <div style="position:fixed; bottom:20px; right:20px; z-index:1000; background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); padding:8px;">
+    <div style="font-size:14px; font-weight:bold; margin-bottom:4px; text-align:center;">
+      Parking Location
+    </div>
+    <iframe
+      src="https://www.google.com/maps?q=42.42620946142231,18.768978941905754&output=embed"
+      width="100"
+      height="100"
+      style="border:0; border-radius:4px;"
+      allowfullscreen=""
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+  </div>
+  
 <script src="src/script.js"></script>
 </body>
 </html>

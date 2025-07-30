@@ -27,12 +27,13 @@ class SendMonthlyFinanceReport extends Command
         $year = $date->year;
 
         // Dobavljanje ukupne zarade za izvještaj
-        $finance = $service->monthlyFinance($month, $year);
+        $finance = $service->monthlyFinancialReport($month, $year);
 
         // Definiši ili učitaj iz configa/baze email adrese kome šalješ izvještaj
         $emails = [
             'prihodi@kotor.me',
             'mirjana.grbovic@kotor.me',
+            'informatika@kotor.me',
             // Dodaj još email adresa po potrebi
         ];
 

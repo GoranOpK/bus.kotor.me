@@ -14,16 +14,13 @@ return [
     |
     */
 
-    // Postmark servis za slanje e-pošte
-    'postmark' => [
-        'token' => env('POSTMARK_TOKEN'), // API token se povlači iz .env fajla
-    ],
-
-    // Amazon SES servis za slanje e-pošte
-    'ses' => [
-        'key' => env('AWS_ACCESS_KEY_ID'), // AWS Access Key ID iz .env
-        'secret' => env('AWS_SECRET_ACCESS_KEY'), // AWS Secret iz .env
-        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'), // Region, podrazumijevano 'us-east-1'
+    'bankart' => [
+        'api_key'    => env('BANKART_API_KEY'),
+        'username'   => env('BANKART_API_USERNAME'),
+        'password'   => env('BANKART_API_PASSWORD'),
+        'api_url'    => env('BANKART_API_URL'),
+        'shared_secret' => env('BANKART_SHARED_SECRET'),
+        'signature_enabled' => env('BANKART_SIGNATURE_ENABLED', false),
     ],
 
     // Resend servis za slanje e-pošte
@@ -31,17 +28,16 @@ return [
         'key' => env('RESEND_KEY'), // API ključ iz .env
     ],
 
-    // Slack notifikacije (npr. za obavještenja)
-    'slack' => [
-        'notifications' => [
-            'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'), // Slack bot token iz .env
-            'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'), // Slack kanal iz .env
-        ],
+    'fiscal' => [
+        'api_url' => env('FISCAL_API_URL', 'https://pm-api-elektronskafiskalizacija.azurewebsites.net'),
+        'api_token' => env('FISCAL_API_TOKEN'),
+        'enu_identifier' => env('FISCAL_ENU_IDENTIFIER', 'hd772pw138'),
+        'user_code' => env('FISCAL_USER_CODE', 'kl099vk702'),
+        'user_name' => env('FISCAL_USER_NAME', 'OGNJEN VUKASOVIC'),
+        'seller_name' => env('FISCAL_SELLER_NAME', 'OPŠTINA KOTOR'),
+        'seller_id_type' => env('FISCAL_SELLER_ID_TYPE', 'TIN'),
+        'seller_id_value' => env('FISCAL_SELLER_ID_VALUE', '02012936'),
+        'seller_address' => env('FISCAL_SELLER_ADDRESS', 'Kotor'),
     ],
 
-    'payment_gateway' => [
-        'sandbox_url' => env('PAYMENT_GATEWAY_SANDBOX_URL'),
-        'production_url' => env('PAYMENT_GATEWAY_PRODUCTION_URL'),
-        'api_key' => env('PAYMENT_GATEWAY_API_KEY'),
-    ],
 ];
