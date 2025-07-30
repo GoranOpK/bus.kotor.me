@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\TempData;
+<<<<<<< HEAD
 use App\Models\Reservation;
 use App\Models\VehicleType;
 use Illuminate\Support\Facades\Http;
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
 
@@ -15,6 +18,7 @@ class PaymentController extends Controller
 {
     public function redirectToHpp(Request $request)
     {
+<<<<<<< HEAD
         \Log::info('Procesiraj placanje debug', [
             'session_id' => session()->getId(),
             'session_data' => session()->all(),
@@ -23,6 +27,9 @@ class PaymentController extends Controller
             '_token' => $request->input('_token'),
         ]);
         
+=======
+
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
         $merchantTransactionId = $request->input('merchantTransactionId');
         if (!$merchantTransactionId) {
             return response()->json(['error' => 'Nedostaje merchantTransactionId.'], 400);
@@ -33,7 +40,11 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Privremeni podaci nisu pronađeni.'], 404);
         }
 
+<<<<<<< HEAD
         $amount = VehicleType::find($temp->vehicle_type_id)?->price ?? null;
+=======
+        $amount = \App\Models\VehicleType::find($temp->vehicle_type_id)?->price ?? null;
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
         if (!$amount) {
             return response()->json(['error' => 'Nije pronađena cena za tip vozila.'], 400);
         }
@@ -45,12 +56,17 @@ class PaymentController extends Controller
             'successUrl'            => route('payment.success', [], true),
             'errorUrl'              => route('payment.error', [], true),
             'cancelUrl'             => route('payment.cancel', [], true),
+<<<<<<< HEAD
             'callbackUrl'           => route('api.payment.callback', [], true),
+=======
+            'callbackUrl'           => route('payment.callback', [], true),
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             'customer' => [
                 'billingAddress1' => 'Test street 1',
                 'billingCity'     => 'Kotor',
                 'billingCountry'  => 'ME',
                 'billingPostcode' => '85330',
+<<<<<<< HEAD
                 'email'           => $temp->email,
             ],
         ];
@@ -62,6 +78,12 @@ class PaymentController extends Controller
             'cancelUrl' => $payload['cancelUrl'],
         ]);
 
+=======
+                'email'           => 'test@example.com',
+            ],
+        ];
+
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
         $apiKey    = config('services.bankart.api_key');
         $username  = config('services.bankart.username');
         $password  = config('services.bankart.password');
@@ -74,10 +96,16 @@ class PaymentController extends Controller
             'Accept'       => 'application/json',
         ];
 
+<<<<<<< HEAD
         $bodyRaw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         if (config('services.bankart.signature_enabled', false)) {
             $sharedSecret = config('services.bankart.shared_secret');
+=======
+        if (config('services.bankart.signature_enabled', false)) {
+            $sharedSecret = config('services.bankart.shared_secret');
+            $bodyRaw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             $date = gmdate('D, d M Y H:i:s') . ' GMT';
             $requestUri = "/api/v3/transaction/{$apiKey}/debit";
             $bodyHash = hash('sha512', $bodyRaw);
@@ -122,7 +150,13 @@ class PaymentController extends Controller
     }
 
     /**
+<<<<<<< HEAD
      * Bankart callback - ovdje se radi fiskalizacija na backendu!
+=======
+     * Callback endpoint koji Bankart poziva nakon transakcije.
+     * Ovde NIŠTA ne radiš direktno sa reservations!
+     * Pozivaš ReservationController@storeFromTemp!
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
      */
     public function callback(Request $request)
     {
@@ -160,6 +194,7 @@ class PaymentController extends Controller
 
         Log::info('Bankart callback received', [
             'headers' => $headers->all(),
+<<<<<<< HEAD
             'payload' => $payload,
             'payload_length' => strlen($payload)
         ]);
@@ -168,6 +203,16 @@ class PaymentController extends Controller
             $contentType = 'application/json; charset=utf-8';
             $date = $headers->get('x-date') ?? $headers->get('date');
             $uri = $request->getRequestUri();
+=======
+            'payload' => $payload
+        ]);
+
+        if (config('services.bankart.signature_enabled', false)) {
+            // Sklapanje signature kao za outgoing!
+            $contentType = 'application/json; charset=utf-8';
+            $date = $headers->get('x-date') ?? $headers->get('date');
+            $uri = $request->getRequestUri(); // Ovo uključuje path i eventualni query string
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             $bodyHash = hash('sha512', $payload);
             $message = "POST\n{$bodyHash}\n{$contentType}\n{$date}\n{$uri}";
             $expectedSignature = base64_encode(hash_hmac('sha512', $message, $sharedSecret, true));
@@ -185,6 +230,7 @@ class PaymentController extends Controller
 
         $data = json_decode($payload, true);
 
+<<<<<<< HEAD
         // Prilagođeno za Bankart - oni šalju result: "OK" umjesto status: "PAID"
         if (isset($data['result']) && $data['result'] === 'OK' && !empty($data['merchantTransactionId'])) {
             $merchantTransactionId = $data['merchantTransactionId'];
@@ -433,6 +479,29 @@ class PaymentController extends Controller
         ]);
         
         return view('payment.success', compact('reservationId'));
+=======
+        if (isset($data['status']) && $data['status'] === 'PAID' && !empty($data['merchantTransactionId'])) {
+            $reservationController = app(\App\Http\Controllers\ReservationController::class);
+            $subRequest = new Request(['merchant_transaction_id' => $data['merchantTransactionId']]);
+            $response = $reservationController->storeFromTemp($subRequest);
+
+            Log::info('Pozvana storeFromTemp nakon PAID', [
+                'merchantTransactionId' => $data['merchantTransactionId'],
+                'result' => $response->getContent()
+            ]);
+        } else {
+            Log::warning('Bankart callback: missing or unexpected status', [
+                'data' => $data
+            ]);
+            return response()->json(['status' => 'ok'], 200);
+        }
+        // Kraj funkcije callback -- ova zagrada je jako bitna!
+    }
+
+    public function success()
+    {
+        return view('payment.success');
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     }
 
     public function cancel()

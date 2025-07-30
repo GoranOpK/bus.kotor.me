@@ -100,6 +100,7 @@
     <p>Bidonkaktus 🌵 &copy; 2025 Kotorbus</p>
   </footer>
   <script>
+<<<<<<< HEAD
     // Utility functions
     function showError(message) {
       const errorDiv = document.getElementById('login-error');
@@ -186,11 +187,37 @@
           const text = await res.text();
           showError('Server error: ' + text);
           setLoading(false);
+=======
+    document.getElementById('admin-login-form').onsubmit = async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('login-error');
+      errorDiv.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: username, password }) // Laravel očekuje 'email'
+        });
+
+        const contentType = res.headers.get('content-type') || '';
+        let data;
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          // Može biti HTML error page
+          const text = await res.text();
+          errorDiv.textContent = 'Server error: ' + text;
+          errorDiv.style.display = 'block';
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
           return;
         }
 
         if (data.token) {
           localStorage.setItem('admin_token', data.token);
+<<<<<<< HEAD
           // Smooth transition
           document.body.style.opacity = '0.8';
           setTimeout(() => {
@@ -233,6 +260,18 @@
         }
       }
     });
+=======
+          window.location.href = 'adminpanel.html';
+        } else {
+          errorDiv.textContent = data.message || 'Login failed!';
+          errorDiv.style.display = 'block';
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Greška u vezi sa serverom!';
+        errorDiv.style.display = 'block';
+      }
+    };
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
   </script>
 </body>
 </html>

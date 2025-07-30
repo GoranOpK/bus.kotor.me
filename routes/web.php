@@ -8,8 +8,11 @@ use App\Http\Controllers\SupportController;
 use App\Http\Controllers\PaymentController;
 use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 use App\Http\Controllers\AdminReadonlyController;
+<<<<<<< HEAD
 use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\StartSession;
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +23,7 @@ use Illuminate\Session\Middleware\StartSession;
 |--------------------------------------------------------------------------
 */
 Route::post('/csrf-debug', function () {
+<<<<<<< HEAD
     file_put_contents(storage_path('debug.txt'), now() . " CSRF DEBUG\n", FILE_APPEND);
     return response()->json(['ok' => true])->header('X-DEMO', 'csrf-debug-match');
 });
@@ -76,6 +80,20 @@ Route::match(['GET', 'POST'], '/test-callback', function (Request $request) {
         'body' => $request->getContent(),
     ]);
     return response()->json(['status' => 'test callback ok']);
+=======
+    \Log::info('CSRF DEBUG WEB route pogodjena!');
+    return response()->json(['ok' => true])->header('X-DEMO', 'csrf-debug-match');
+});
+
+Route::get('/test-session', function() {
+    $session_id = session()->getId();
+    $session_data = session()->all();
+    return [
+        'session_id' => $session_id,
+        'session_data' => $session_data,
+        'cookies' => $_COOKIE
+    ];
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 });
 
 Route::get('/test-db', function() {
@@ -95,9 +113,13 @@ Route::get('/test-db', function() {
 
 // Plaćanje (HPP redirect flow)
 Route::post('/procesiraj-placanje', [PaymentController::class, 'redirectToHpp'])->name('payment.redirect-hpp');
+<<<<<<< HEAD
 Route::match(['GET', 'POST'], '/payment/callback', [PaymentController::class, 'callback'])
     ->name('payment.callback')
     ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+=======
+Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
 Route::get('/payment/cancel',  [PaymentController::class, 'cancel'])->name('payment.cancel');
 Route::get('/payment/error',   [PaymentController::class, 'error'])->name('payment.error');
@@ -106,6 +128,7 @@ Route::get('/payment/error',   [PaymentController::class, 'error'])->name('payme
 Route::get('/podrska', [SupportController::class, 'showForm'])->name('support.form');
 Route::post('/podrska', [SupportController::class, 'send'])->name('support.send');
 
+<<<<<<< HEAD
 // Sanctum CSRF ruta (automatski kod instalacije Sanctuma)
 Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
 
@@ -113,6 +136,16 @@ Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
 Route::prefix('sanctum')->group(function () {
     Route::get('csrf-cookie', [CsrfCookieController::class, 'show']);
 });
+=======
+// === DODAJ POSEBNU RUTU ZA CSRF TOKEN (AJAX friendly) ===
+//Route::get('/csrf-token', function () {
+//	 \Log::info('CSRF TEST ROUTE REACHED');
+//    return response()->json(['csrf_token' => csrf_token()]);
+// });
+
+// Sanctum CSRF ruta (automatski kod instalacije Sanctuma)
+Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 
 // ======= SPA KORISNIČKI FRONT (index.html) =======
 Route::get('/', function () {
@@ -190,6 +223,7 @@ Route::prefix('admin')->group(function () {
             return response()->file($path);
         });
         Route::post('logout', [LoginController::class, 'logout'])->name('admin.logout');
+<<<<<<< HEAD
         
         // Dodaj još admin-only rute po potrebi
     });
@@ -202,6 +236,13 @@ Route::prefix('admin')->group(function () {
     Route::get('reports/yearly-finance', [ReportController::class, 'sendYearlyFinance']);
     Route::get('reports/yearly-vehicle-reservations', [ReportController::class, 'sendYearlyVehicleReservations']);
 
+=======
+        Route::get('izvjestaj', [ReportController::class, 'generate'])->name('admin.report');
+        Route::post('brisanje', [ReservationController::class, 'delete'])->name('admin.brisanje');
+        // Dodaj još admin-only rute po potrebi
+    });
+
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     // TEST/DEV rute - samo lokalno okruženje
     if (app()->environment('local')) {
         Route::get('test-payment', [PaymentController::class, 'test']);
@@ -240,6 +281,7 @@ Route::prefix('admin')->group(function () {
     })->where('any', '.*');
 });
 
+<<<<<<< HEAD
 // ======= TEST RUTE (ukloni u produkciji!) =======
 // Test ruta za PDF preview
 Route::get('/test-pdf/{id}', function($id) {
@@ -273,6 +315,8 @@ Route::get('/download-invoice/{id}', function($id) {
         ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
 })->name('download.invoice');
 
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 // ======= GLOBAL GET catch-all (SPA podrška) =======
 // Catch-all za GET (SPA)
 Route::get('/{any}', function () {
@@ -283,6 +327,7 @@ Route::get('/{any}', function () {
     return response()->file($path);
 })->where('any', '^(?!api\/).*');
 
+<<<<<<< HEAD
 // Test route za proveru sesije (GET i POST)
 Route::match(['get', 'post'], '/test-session-debug', function (Request $request) {
     return response()->json([
@@ -313,5 +358,10 @@ Route::fallback(function () {
             return response()->file($path);
         }
     }
+=======
+// Fallback za ostalo
+Route::fallback(function () {
+    \Log::info('FALLBACK route triggered! Method: ' . request()->method() . ', URI: ' . request()->path());
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     return response('Route not found', 404);
 });

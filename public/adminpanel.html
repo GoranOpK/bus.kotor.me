@@ -27,6 +27,7 @@
       <main class="main-container" style="display: flex; gap: 40px; align-items: flex-start;">
         <nav id="admin-panel"></nav>
         <section id="admin-section" style="display:block; min-width:340px;">
+<<<<<<< HEAD
           <h2 id="admin-title">Admin panel</h2>
 
           <!-- Blokirani dani i nedostupni termini -->
@@ -273,6 +274,44 @@
         </section>
 
         <aside class="admin-panel-center" style="max-width: 400px; margin: 40px auto; background: #fff; border-radius: 10px; padding: 32px 24px; box-sizing: border-box;">
+=======
+          <h2 id="admin-title">Admin Panel</h2>
+
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Block time slots for a date</h3>
+            <input type="date" id="block-slot-date">
+            <div id="slots-checkbox-list" style="margin:10px 0;"></div>
+            <button id="block-slots-btn" type="button">Block selected slots</button>
+          </div>
+
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Block entire day</h3>
+            <input type="date" id="block-day-date">
+            <button id="block-day-btn" type="button">Block day</button>
+          </div>
+
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Update number of slots</h3>
+            <input type="number" id="num-slots" min="1" max="100" placeholder="Number of slots">
+            <button id="update-slots-btn" type="button">Update</button>
+          </div>
+
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Edit reservation</h3>
+            <input type="text" id="edit-reservation-id" placeholder="Reservation ID or Email">
+            <button id="edit-reservation-btn" type="button">Find</button>
+            <div id="edit-reservation-form" style="display:none;"></div>
+          </div>
+
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Free reservation (no payment)</h3>
+            <input type="text" id="free-reservation-id" placeholder="Reservation ID or Email">
+            <button id="free-reservation-btn" type="button">Grant Free</button>
+          </div>
+        </section>
+
+        <aside class="admin-panel-center" style="max-width: 400px; margin: 40px auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 16px rgba(0,0,0,0.12); padding: 32px 24px; box-sizing: border-box;">
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
           <!-- Dodaj ovde dodatne admin forme ili informacije po potrebi -->
         </aside>
       </main>
@@ -290,7 +329,10 @@
         <img src="src/logoop.png" alt="OpKotor" style="height:80px;">
         <p>Bidonkaktus 🌵 &copy; 2025 Kotorbus</p>
       </footer>
+<<<<<<< HEAD
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
       <script src="src/admin.js"></script>
     </div>
   </div>

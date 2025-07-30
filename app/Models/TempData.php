@@ -18,12 +18,15 @@ class TempData extends Model
         'license_plate',
         'vehicle_type_id',
         'email',
+<<<<<<< HEAD
         'status',
         'fiscal_jir',
         'fiscal_ikof',
         'fiscal_qr',
         'fiscal_operator',
         'fiscal_date',
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     ];
 
     public $timestamps = true; // ili false, ako ne koristiš created_at/updated_at

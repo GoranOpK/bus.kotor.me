@@ -11,8 +11,11 @@
 </head>
 <body>
     <h1>Godišnji finansijski izvještaj - Kotor Bus</h1>
+<<<<<<< HEAD
     <p><strong>Ukupan prihod:</strong> {{ number_format($totalFinance ?? 0, 2, ',', '.') }} &euro;</p>
     <p><strong>Ukupan broj transakcija:</strong> {{ $totalCount ?? 0 }}</p>
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     <table>
         <thead>
             <tr>

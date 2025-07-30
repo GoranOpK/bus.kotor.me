@@ -32,7 +32,11 @@ function renderIntervals(intervals, nowMinutes) {
   const container = document.getElementById('intervals');
   const slotsToShow = getCurrentAndNextTwoSlots(intervals, nowMinutes);
   if (!slotsToShow.length) {
+<<<<<<< HEAD
     container.innerHTML = `<div class="interval-block"><div class="interval-title">Nema rezervisanih slotova </div></div>`;
+=======
+    container.innerHTML = `<div class="interval-block"><div class="interval-title">Nema rezervisanih vremenskih slotova za prikaz</div></div>`;
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     return;
   }
   container.innerHTML = slotsToShow.map(interval => `

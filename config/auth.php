@@ -36,6 +36,7 @@ return [
             'driver' => 'token', // ili 'sanctum' ili 'jwt' ako koristiš neki paket
             'provider' => 'admins',
         ],
+<<<<<<< HEAD
         'admin' => [
             'driver' => 'session',
             'provider' => 'admins',
@@ -44,6 +45,8 @@ return [
             'driver' => 'session',
             'provider' => 'admins',
         ],
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     ],
 
     /*

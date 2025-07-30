@@ -32,8 +32,13 @@
             // Lookup tabela za rezervacije po tipu
             $rezervacijeLookup = [];
             foreach ($reservationsByType as $row) {
+<<<<<<< HEAD
                 $id = $row->vehicle_type_id ?? null;
                 $broj = $row->broj_rezervacija ?? $row->count ?? 0;
+=======
+                $id = $row->vehicle_type_id ?? ($row['vehicle_type_id'] ?? null);
+                $broj = $row->broj_rezervacija ?? ($row['broj_rezervacija'] ?? ($row->count ?? ($row['count'] ?? 0)));
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
                 if ($id) {
                     $rezervacijeLookup[$id] = $broj;
                 }

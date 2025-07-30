@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Payment Successful</title>
+<<<<<<< HEAD
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
@@ -66,10 +67,13 @@
             margin: 20px 0;
         }
     </style>
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 </head>
 <body>
     <h1>Payment Successful!</h1>
     <p>Your payment has been received. The reservation is recorded.</p>
+<<<<<<< HEAD
 
     <a href="/download-invoice/{{ $reservationId ?? '' }}" class="download-btn" style="display:inline-block;margin-top:20px;">
         📄 Preuzmi račun (PDF)
@@ -143,5 +147,7 @@
         }, 2000);
         }
     </script>
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 </body>
 </html>

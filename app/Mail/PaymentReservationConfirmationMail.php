@@ -21,7 +21,11 @@ class PaymentReservationConfirmationMail extends Mailable
      * @param mixed $invoicePdf
      * @param mixed $confirmationPdf
      */
+<<<<<<< HEAD
     public function __construct($userName, $invoicePdf, $confirmationPdf = null)
+=======
+    public function __construct($userName, $invoicePdf, $confirmationPdf)
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     {
         $this->userName = $userName;
         $this->invoicePdf = $invoicePdf;
@@ -40,6 +44,7 @@ class PaymentReservationConfirmationMail extends Mailable
             ->with([
                 'user_name' => $this->userName
             ])
+<<<<<<< HEAD
             ->attachData($this->invoicePdf, 'Invoice.pdf', ['mime' => 'application/pdf']);
             
         // Priloži confirmation PDF ako postoji
@@ -48,5 +53,9 @@ class PaymentReservationConfirmationMail extends Mailable
         }
         
         return $mail;
+=======
+            ->attachData($this->invoicePdf, 'Invoice.pdf', ['mime' => 'application/pdf'])
+            ->attachData($this->confirmationPdf, 'PaymentConfirmation.pdf', ['mime' => 'application/pdf']);
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     }
 }

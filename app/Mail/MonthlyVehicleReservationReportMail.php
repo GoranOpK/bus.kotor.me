@@ -38,7 +38,11 @@ class MonthlyVehicleReservationReportMail extends Mailable
         ]);
 
         return $this->subject('Mjesečni izvještaj o rezervacijama po tipu vozila')
+<<<<<<< HEAD
             ->view('emails.blank') // koristi prazan view
+=======
+            ->text('emails.empty') // obavezno kreiraj prazan emails/empty.blade.php
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             ->attachData(
                 $pdf->output(),
                 'mjesecni_izvjestaj_rezervacije_po_voznom_parku.pdf',

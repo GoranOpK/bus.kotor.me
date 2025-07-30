@@ -11,6 +11,7 @@ class VerifyCsrfToken extends Middleware
      *
      * @var array
      */
+<<<<<<< HEAD
 
     protected $except = [
         'api/*',
@@ -23,4 +24,15 @@ class VerifyCsrfToken extends Middleware
         'test-post',
         'test-simple',
     ];
+=======
+protected $except = [
+    'api/*',
+	'/procesiraj-placanje',
+    'procesiraj-placanje',
+    'public/procesiraj-placanje', // dodaj i ovo!
+    '/public/procesiraj-placanje',
+	'payment/callback*',
+    '*',
+];
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 }

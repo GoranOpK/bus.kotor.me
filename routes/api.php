@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\ReadonlyAdminController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\TempReservationController;
 use Illuminate\Http\Request;
+<<<<<<< HEAD
 use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 use Illuminate\Session\Middleware\StartSession;
 use App\Models\SystemConfig;
@@ -59,6 +60,9 @@ Route::middleware([StartSession::class])->group(function () {
     Route::post('/procesiraj-placanje', [PaymentController::class, 'redirectToHpp']);
 });
 
+=======
+
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -76,6 +80,7 @@ Route::get('readonly-admin/timeslots/reserved-today', [ReservedSlotsController::
 Route::post('reservations/reserve', [ReservationController::class, 'reserve'])->middleware('throttle:10,1');
 Route::get('reservations/slots', [ReservationController::class, 'showSlots']);
 Route::get('reservations/by-date', [ReservationController::class, 'byDate']);
+<<<<<<< HEAD
 Route::get('slot-count', [ReservationController::class, 'slotCount']);
 Route::get('slots/{slot_id}/availability', [TimeSlotController::class, 'availability']);
 Route::post('/temp-reservation', [TempReservationController::class, 'store']);
@@ -85,6 +90,11 @@ Route::post('reservations/send-free-confirmation', [ReservationController::class
 // Payment callback - izuzet iz CSRF jer banka ne može da šalje token
 Route::match(['GET', 'POST'], 'payment/callback', [PaymentController::class, 'callback'])->name('api.payment.callback');
 
+=======
+Route::get('slots/{slot_id}/availability', [TimeSlotController::class, 'availability']);
+Route::post('/temp-reservation', [TempReservationController::class, 'store']);
+Route::post('reservations/from-temp', [ReservationController::class, 'storeFromTemp']);
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 Route::any('/debug-csrf', function (Request $request) {
     return response()->json([
         'method' => $request->method(),
@@ -96,7 +106,11 @@ Route::any('/debug-csrf', function (Request $request) {
 });
 
 // ====== BANKART HPP API endpoint: KORISTI API VARIJANTU, NE redirectToHpp ======
+<<<<<<< HEAD
 // Route::post('reservations/reserve-and-pay', [PaymentController::class, 'reserveAndPayApi']); // <-- OBRIŠI ILI KOMENTARIŠI
+=======
+Route::post('reservations/reserve-and-pay', [PaymentController::class, 'reserveAndPayApi']); // <-- ISPRAVNO!
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 
 // Rute za slanje email-ova
 Route::post('send-payment-confirmation', [MailController::class, 'sendPaymentConfirmation'])->name('api.mail.payment-confirmation');
@@ -125,6 +139,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     // Blokiranje slotova i dana
     Route::post('admin/block_slots', [AdminController::class, 'blockSlots']);
     Route::post('admin/block_day', [AdminController::class, 'blockDay']);
+<<<<<<< HEAD
     Route::post('admin/deblock_slots', [AdminController::class, 'deblockSlots']);
     Route::post('admin/deblock_day', [AdminController::class, 'deblockDay']);
     Route::post('admin/update_slots', [AdminController::class, 'updateSlots']);
@@ -139,14 +154,20 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
       Route::post('admin/generate-reservations-txt', [AdminController::class, 'generateReservationsTxt']);
       Route::post('admin/log-reservations', [AdminController::class, 'logReservations']);
     Route::get('test-admin', function() { return response()->json(['status' => 'admin route works']); });
+=======
+    Route::post('admin/update_slots', [AdminController::class, 'updateSlots']);
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 
     // Upravljanje slotovima (sem index i show)
     Route::apiResource('timeslots', TimeSlotController::class)->except(['index', 'show']);
 
     // Upravljanje vrstama vozila (sem index i show)
     Route::apiResource('vehicle-types', VehicleTypeController::class)->except(['index', 'show']);
+<<<<<<< HEAD
     Route::get('admin/vehicle-types', [VehicleTypeController::class, 'index']);
     
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 
     // Upravljanje admin korisnicima (sem index)
     Route::apiResource('admins', AdminController::class)->except(['index']);
@@ -155,6 +176,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     // Upravljanje rezervacijama
     Route::delete('reservations/{reservation}', [ReservationController::class, 'destroy']);
     Route::patch('reservations/{id}/status', [ReservationController::class, 'updateStatus']);
+<<<<<<< HEAD
     Route::put('admin/reservation/{id}', [ReservationController::class, 'update']);
     Route::post('admin/reservation_free/{reservation}', [AdminController::class, 'freeReservation']);
     Route::get('admin/reservation/{reservation}', [AdminController::class, 'showReservation']);
@@ -261,4 +283,12 @@ Route::prefix('admin')->group(function () {
         Route::post('block_day', [AdminController::class, 'blockDay']);
         Route::get('reservation/{email}', [AdminController::class, 'showReservation']);
     });
+=======
+    Route::post('admin/update_reservation/{reservation}', [AdminController::class, 'updateReservation']);
+    Route::post('admin/reservation_free/{reservation}', [AdminController::class, 'freeReservation']);
+    Route::get('admin/reservation/{reservation}', [AdminController::class, 'showReservation']);
+
+    // Sistem konfiguracija
+    Route::post('system-config', [SystemConfigController::class, 'store']);
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 });

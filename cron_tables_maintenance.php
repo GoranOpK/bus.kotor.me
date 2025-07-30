@@ -73,6 +73,7 @@ $stmt = $pdo->prepare("SELECT table_name FROM information_schema.tables WHERE ta
 $stmt->execute([$db_name]);
 $allTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+<<<<<<< HEAD
 echo "Danas je: " . $today->format('Y-m-d') . "\n";
 echo "Pronađene tabele: " . implode(', ', $allTables) . "\n";
 
@@ -137,6 +138,20 @@ foreach ($allTables as $table) {
         }
     } else {
         echo "⚠️  Ne mogu da parsujem datum iz tabele: $table\n";
+=======
+foreach ($allTables as $table) {
+    $tableDate = DateTime::createFromFormat('Ymd', $table);
+    if ($tableDate && $tableDate < $today) {
+        $dateStr = $tableDate->format('Y-m-d');
+        try {
+            $pdo->exec("CALL DropTableForDate('$dateStr')");
+        } catch (PDOException $e) {
+            notifyError(
+                "Greška pri brisanju tabele za $dateStr",
+                "Došlo je do greške pri brisanju tabele $table ($dateStr):\n" . $e->getMessage()
+            );
+        }
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     }
 }
 ?>

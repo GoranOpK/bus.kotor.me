@@ -28,6 +28,7 @@ return [
         'key' => env('RESEND_KEY'), // API ključ iz .env
     ],
 
+<<<<<<< HEAD
     'fiscal' => [
         'api_url' => env('FISCAL_API_URL', 'https://pm-api-elektronskafiskalizacija.azurewebsites.net'),
         'api_token' => env('FISCAL_API_TOKEN'),
@@ -40,4 +41,6 @@ return [
         'seller_address' => env('FISCAL_SELLER_ADDRESS', 'Kotor'),
     ],
 
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 ];

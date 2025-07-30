@@ -35,7 +35,11 @@ class YearlyVehicleReservationReportMail extends Mailable
         ]);
 
         return $this->subject('Godišnji izvještaj o rezervacijama po tipu vozila')
+<<<<<<< HEAD
             ->view('emails.blank') // koristi prazan view
+=======
+            ->text('emails.empty') // obavezno napravi prazan view resources/views/emails/empty.blade.php
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             ->attachData(
                 $pdf->output(),
                 'godisnji_izvjestaj_rezervacije_po_voznom_parku.pdf',

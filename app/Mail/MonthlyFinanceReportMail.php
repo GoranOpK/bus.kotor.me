@@ -14,17 +14,27 @@ class MonthlyFinanceReportMail extends Mailable
     public $finance;
     public $month;
     public $year;
+<<<<<<< HEAD
     public $count;
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 
     /**
      * Konstruktor
      */
+<<<<<<< HEAD
     public function __construct($month, $year, $finance, $count = 0)
+=======
+    public function __construct($month, $year, $finance)
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     {
         $this->month = $month;
         $this->year = $year;
         $this->finance = $finance;
+<<<<<<< HEAD
         $this->count = $count;
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     }
 
     /**
@@ -36,7 +46,10 @@ class MonthlyFinanceReportMail extends Mailable
             'month' => $this->month,
             'year' => $this->year,
             'finance' => $this->finance,
+<<<<<<< HEAD
             'count' => $this->count,
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
         ]);
 
         return $this->subject('Mjesečni finansijski izvještaj')

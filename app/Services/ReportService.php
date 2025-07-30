@@ -32,9 +32,15 @@ class ReportService
     {
         return DB::table('reservations')
             ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+<<<<<<< HEAD
             ->select('vehicle_types.id as vehicle_type_id', 'vehicle_types.description_vehicle as tip_vozila', DB::raw('COUNT(*) as broj_rezervacija'))
             ->whereDate('reservation_date', $date)
             ->groupBy('vehicle_types.id', 'vehicle_types.description_vehicle')
+=======
+            ->select('vehicle_types.description_vehicle as tip_vozila', DB::raw('COUNT(*) as broj_rezervacija'))
+            ->whereDate('reservation_date', $date)
+            ->groupBy('vehicle_types.description_vehicle')
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             ->get();
     }
 
@@ -44,8 +50,13 @@ class ReportService
         return Reservation::whereYear('reservation_date', $year)
             ->whereMonth('reservation_date', $month)
             ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+<<<<<<< HEAD
             ->select('vehicle_types.id as vehicle_type_id', 'vehicle_types.description_vehicle as tip_vozila', DB::raw('COUNT(*) as broj_rezervacija'))
             ->groupBy('vehicle_types.id', 'vehicle_types.description_vehicle')
+=======
+            ->select('vehicle_types.description_vehicle as tip_vozila', DB::raw('COUNT(*) as broj_rezervacija'))
+            ->groupBy('vehicle_types.description_vehicle')
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             ->get();
     }
 
@@ -54,18 +65,28 @@ class ReportService
     {
         return Reservation::whereYear('reservation_date', $year)
             ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+<<<<<<< HEAD
             ->select('vehicle_types.id as vehicle_type_id', 'vehicle_types.description_vehicle as tip_vozila', DB::raw('COUNT(*) as broj_rezervacija'))
             ->groupBy('vehicle_types.id', 'vehicle_types.description_vehicle')
+=======
+            ->select('vehicle_types.description_vehicle as tip_vozila', DB::raw('COUNT(*) as broj_rezervacija'))
+            ->groupBy('vehicle_types.description_vehicle')
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             ->get();
     }
 
     // Dnevni finansijski izvještaj - zbir prihoda za određeni dan
     public function dailyFinancialReport($date)
     {
+<<<<<<< HEAD
         return DB::table('reservations')
             ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
             ->whereDate('reservation_date', $date)
             ->where('status', 'paid')
+=======
+        return Reservation::whereDate('reservation_date', $date)
+            ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             ->sum('vehicle_types.price');
     }
 
@@ -76,17 +97,26 @@ class ReportService
             ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
             ->whereYear('reservation_date', $year)
             ->whereMonth('reservation_date', $month)
+<<<<<<< HEAD
             ->where('status', 'paid')
+=======
+            ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             ->sum('vehicle_types.price');
     }
 
     // Godišnji finansijski izvještaj - zbir prihoda za određenu godinu
     public function yearlyFinancialReport($year)
     {
+<<<<<<< HEAD
         return DB::table('reservations')
             ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
             ->whereYear('reservation_date', $year)
             ->where('status', 'paid')
+=======
+        return Reservation::whereYear('reservation_date', $year)
+            ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             ->sum('vehicle_types.price');
     }
 
@@ -123,11 +153,15 @@ class ReportService
     public function sendDailyVehicleTypeReport($date)
     {
         $data = $this->dailyVehicleReservationsByType($date);
+<<<<<<< HEAD
         if ($data->isEmpty()) {
             // Ne šalji mail ako nema rezervacija
             return;
         }
         Mail::to($this->getReportEmails())
+=======
+        Mail::to($this->emails)
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             ->send(new DailyVehicleReservationReportMail($data, $date));
     }
 
@@ -135,11 +169,15 @@ class ReportService
     public function sendMonthlyVehicleTypeReport($month, $year)
     {
         $data = $this->monthlyVehicleReservationsByType($month, $year);
+<<<<<<< HEAD
         if ($data->isEmpty()) {
             // Ne šalji mail ako nema rezervacija
             return;
         }
         Mail::to($this->getReportEmails())
+=======
+        Mail::to($this->emails)
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             ->send(new MonthlyVehicleReservationReportMail($month, $year, $data));
     }
 
@@ -147,11 +185,15 @@ class ReportService
     public function sendYearlyVehicleTypeReport($year)
     {
         $data = $this->yearlyVehicleReservationsByType($year);
+<<<<<<< HEAD
         if ($data->isEmpty()) {
             // Ne šalji mail ako nema rezervacija
             return;
         }
         Mail::to($this->getReportEmails())
+=======
+        Mail::to($this->emails)
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             ->send(new YearlyVehicleReservationReportMail($year, $data));
     }
 
@@ -164,7 +206,11 @@ class ReportService
     {
         $total = $this->dailyFinancialReport($date);
         $count = $this->dailyCount($date);
+<<<<<<< HEAD
         Mail::to($this->getReportEmails())
+=======
+        Mail::to($this->emails)
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
             ->send(new DailyFinanceReportMail($date, $total, $count));
     }
 
@@ -172,9 +218,14 @@ class ReportService
     public function sendMonthlyFinancialReport($month, $year)
     {
         $total = $this->monthlyFinancialReport($month, $year);
+<<<<<<< HEAD
         $count = $this->monthlyCount($month, $year);
         Mail::to($this->getReportEmails())
             ->send(new MonthlyFinanceReportMail($month, $year, $total, $count));
+=======
+        Mail::to($this->emails)
+            ->send(new MonthlyFinanceReportMail($month, $year, $total));
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     }
 
     // Šalje godišnji finansijski izvještaj
@@ -182,9 +233,14 @@ class ReportService
     {
         $financePerMonth = $this->yearlyFinancePerMonth($year);
         $totalFinance = $this->yearlyFinancialReport($year);
+<<<<<<< HEAD
         $totalCount = $this->yearlyCount($year);
         Mail::to($this->getReportEmails())
             ->send(new YearlyFinanceReportMail($year, $financePerMonth, $totalFinance, $totalCount));
+=======
+        Mail::to($this->emails)
+            ->send(new YearlyFinanceReportMail($year, $financePerMonth, $totalFinance));
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     }
 
     // ===========================
@@ -231,8 +287,11 @@ class ReportService
         return $pdf->download($filename);
     }
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     // Vrati PDF finansijski izvještaj za preuzimanje (za admin panel)
     public function downloadFinancialReport($periodType, $params)
     {
@@ -277,6 +336,7 @@ class ReportService
         return $pdf->download($filename);
     }
 
+<<<<<<< HEAD
     // Broj rezervacija za dati dan (samo paid)
     public function dailyCount($date)
     {
@@ -303,5 +363,11 @@ class ReportService
             ->whereYear('reservation_date', $year)
             ->where('status', 'paid')
             ->count();
+=======
+    // Broj rezervacija za dati dan
+    public function dailyCount($date)
+    {
+        return Reservation::whereDate('reservation_date', $date)->count();
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     }
 }

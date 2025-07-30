@@ -12,7 +12,11 @@ return [
     | a ne na cijeli sajt. 'sanctum/csrf-cookie' koristiš ako koristiš Sanctum
     | za autentifikaciju.
     */
+<<<<<<< HEAD
     'paths' => ['api/*', 'sanctum/csrf-cookie' , 'procesiraj-placanje', 'payment/*', 'callback', 'callback/*', 'test-callback'],
+=======
+    'paths' => ['api/*', 'sanctum/csrf-cookie' , 'procesiraj-placanje'],
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
 
     /*
     |--------------------------------------------------------------------------
@@ -44,8 +48,11 @@ return [
         'http://127.0.0.1:8080',
         'https://127.0.0.1:8080',
         'https://bus.kotor.me', // Produkcija
+<<<<<<< HEAD
         'https://gateway.bankart.si', // Bankart payment gateway
         'https://bankart.si', // Bankart main domain
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     ],
 
     /*

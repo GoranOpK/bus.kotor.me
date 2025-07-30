@@ -139,6 +139,7 @@ class AdminController extends Controller
             ]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
+<<<<<<< HEAD
     }
 
     public function blockDay(Request $request)
@@ -549,5 +550,7 @@ class AdminController extends Controller
             \Log::error('logReservations error: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
+=======
+>>>>>>> 9d6ee7a59e5e93661c589e783ea991b54a6acabb
     }
 }
