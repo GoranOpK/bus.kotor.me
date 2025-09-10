@@ -31,6 +31,7 @@ class SendMonthlyVehicleReservationReport extends Command
         $emails = [
             'prihodi@kotor.me',
             'mirjana.grbovic@kotor.me',
+            'informatika@kotor.me',
             // Dodaj još adresa po potrebi
         ];
 

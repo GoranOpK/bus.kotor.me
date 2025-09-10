@@ -12,8 +12,15 @@ class SystemConfigSeeder extends Seeder
         DB::table('system_config')->updateOrInsert(
             ['name' => 'available_parking_slots'],
             [
-                'value' => 7,
-            
+                'value' => 8
+            ]
+        );
+
+        // Dodaj red za document_number
+        DB::table('system_config')->updateOrInsert(
+            ['name' => 'document_number'],
+            [
+                'value' => 1
             ]
         );
     }

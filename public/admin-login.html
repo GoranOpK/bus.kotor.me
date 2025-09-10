@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kotorbus Admin Login</title>
+  <link rel="stylesheet" href="src/style.css">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .main-content {
+      flex: 1 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .admin-login-container {
+      max-width: 350px;
+      margin: 40px auto;
+      padding: 24px 16px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      box-sizing: border-box;
+      display: block;
+    }
+    .admin-login-container input[type="text"],
+    .admin-login-container input[type="email"],
+    .admin-login-container input[type="password"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+    .admin-login-container h2 {
+      text-align: center;
+    }
+    .admin-login-container button {
+      width: 100%;
+      padding: 14px 0;
+      font-size: 18px;
+      background: #9c1420;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .error {
+      color: #c00;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    footer {
+      flex-shrink: 0;
+      width: 100%;
+      text-align: center;
+      background: #9c1420;
+      color: white;
+      padding: 16px 0;
+      margin: 0;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <header style="display: flex; align-items: center; justify-content: space-between;">
+    <div style="flex:1;"></div>
+    <img src="src/logo.png" alt="Kotorbus Logo" style="display:block; margin:auto;">
+    <div style="flex:1; display:flex; justify-content: flex-end; gap:10px; align-items:center;">
+      <img src="src/gb.png" alt="English" id="lang-en" style="width:32px; height:32px; cursor:pointer;">
+      <img src="src/mne.png" alt="Crnogorski" id="lang-cg" style="width:32px; height:32px; cursor:pointer;">
+    </div>
+  </header>
+
+  <div class="main-content">
+    <div class="admin-login-container">
+      <h2>
+        <img src="src/bidon.svg" alt="bidon" style="width:1em; height:1em; vertical-align:-0.15em;">
+        Bidonkaktus Panel 🌵
+      </h2>
+      <div id="login-error" class="error" style="display:none;"></div>
+      <form id="admin-login-form" autocomplete="off">
+        <input type="email" id="username" name="username" placeholder="Email" required autofocus>
+        <input type="password" id="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  </div>
+  
+  <footer>
+    <img src="src/logoop.png" alt="OpKotor" style="height:80px;">
+    <p>Bidonkaktus 🌵 &copy; 2025 Kotorbus</p>
+  </footer>
+  <script>
+    // Utility functions
+    function showError(message) {
+      const errorDiv = document.getElementById('login-error');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      errorDiv.style.animation = 'shake 0.5s ease-in-out';
+    }
+    
+    function hideError() {
+      const errorDiv = document.getElementById('login-error');
+      errorDiv.style.display = 'none';
+    }
+    
+    function setLoading(isLoading) {
+      const form = document.getElementById('admin-login-form');
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const inputs = form.querySelectorAll('input');
+      
+      if (isLoading) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Učitavanje...';
+        inputs.forEach(input => input.disabled = true);
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Login';
+        inputs.forEach(input => input.disabled = false);
+      }
+    }
+    
+    // Add shake animation
+    if (!document.getElementById('login-animations')) {
+      const style = document.createElement('style');
+      style.id = 'login-animations';
+      style.textContent = `
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    document.getElementById('admin-login-form').onsubmit = async function(e) {
+      e.preventDefault();
+      hideError();
+      setLoading(true);
+      
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      
+      // Client-side validation
+      if (!username || !password) {
+        showError('Molimo popunite sva polja');
+        setLoading(false);
+        return;
+      }
+      
+      if (!username.includes('@')) {
+        showError('Molimo unesite ispravnu email adresu');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sekundi timeout
+        
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: username, password }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        const contentType = res.headers.get('content-type') || '';
+        let data;
+        
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          showError('Server error: ' + text);
+          setLoading(false);
+          return;
+        }
+
+        if (data.token) {
+          localStorage.setItem('admin_token', data.token);
+          // Smooth transition
+          document.body.style.opacity = '0.8';
+          setTimeout(() => {
+            window.location.href = 'adminpanel.html';
+          }, 300);
+        } else {
+          showError(data.message || 'Login failed!');
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        
+        if (err.name === 'AbortError') {
+          showError('Zahtev je prekinut. Proverite internet konekciju.');
+        } else {
+          showError('Greška u vezi sa serverom!');
+        }
+        
+        setLoading(false);
+      }
+    };
+    
+    // Auto-focus on username field
+    document.addEventListener('DOMContentLoaded', function() {
+      const usernameInput = document.getElementById('username');
+      if (usernameInput) {
+        usernameInput.focus();
+      }
+    });
+    
+    // Enter key navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const activeElement = document.activeElement;
+        if (activeElement && activeElement.tagName === 'INPUT') {
+          const form = document.getElementById('admin-login-form');
+          if (form) {
+            form.dispatchEvent(new Event('submit'));
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

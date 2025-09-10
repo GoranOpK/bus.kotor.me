@@ -36,7 +36,8 @@ class MailController extends Controller
             new PaymentReservationConfirmationMail(
                 $validated['user_name'],
                 $pdf1->output(), // raw PDF data
-                $pdf2->output()  // raw PDF data
+                $pdf2->output(),  // raw PDF data
+                false // nije besplatna rezervacija
             )
         );
 

@@ -2,9 +2,8 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>{{ $title ?? 'Godišnji izvještaj o rezervacijama po tipu vozila' }}</title>
+    <title>{{ $title ?? 'Godišnji izvještaj o rezervacijama po tipu vozila - Kotor Bus' }}</title>
     <style>
-        /* Stilovi za PDF prikaz */
         body { font-family: DejaVu Sans, Arial, sans-serif; }
         table { border-collapse: collapse; width: 100%; margin-top: 24px; }
         th, td { border: 1px solid #cccccc; padding: 8px 12px; text-align: left; }
@@ -12,9 +11,7 @@
     </style>
 </head>
 <body>
-    <!-- Naslov izvještaja -->
-    <h2>{{ $title ?? 'Godišnji izvještaj o rezervacijama po tipu vozila' }}</h2>
-    <!-- Prikaz godine izvještaja -->
+    <h2>{{ $title ?? 'Godišnji izvještaj o rezervacijama po tipu vozila - Kotor Bus' }}</h2>
     <p>Godina: {{ $year }}</p>
     <table>
         <thead>
@@ -24,29 +21,29 @@
             </tr>
         </thead>
         <tbody>
-        <!-- Prikaz svih tipova vozila i broja rezervacija za svaki tip -->
-        @foreach ($reservationsByType as $row)
+        @php
+            // Svi tipovi vozila koje želiš prikazati
+            $tipovi = [
+                1 => 'PUTNIČKO VOZILO (4+1, 5+1, 6+1, 7+1 sjedišta)',
+                2 => 'PUTNIČKO VOZILO (8+1 sjedišta)',
+                3 => 'SREDNJI AUTOBUS (9-23 sjedišta)',
+                4 => 'VELIKI AUTOBUS (PREKO 23 sjedišta)'
+            ];
+            // Mapiraj rezervacije po tipu za brži lookup
+            $rezervacijeLookup = [];
+            foreach ($reservationsByType as $row) {
+                $id = $row->vehicle_type_id ?? null;
+                $broj = $row->broj_rezervacija ?? $row->count ?? 0;
+                if ($id) {
+                    $rezervacijeLookup[$id] = $broj;
+                }
+            }
+        @endphp
+
+        @foreach($tipovi as $id => $naziv)
             <tr>
-                <td>
-                    <!-- Prikaz imena tipa vozila, provjerava više mogućih polja u objektu -->
-                    @if(isset($row->tip_vozila))
-                        {{ $row->tip_vozila }}
-                    @elseif(isset($row->vehicleType) && isset($row->vehicleType->name))
-                        {{ $row->vehicleType->name }}
-                    @else
-                        Nepoznat tip
-                    @endif
-                </td>
-                <td>
-                    <!-- Prikaz broja rezervacija za taj tip vozila, provjerava više mogućih polja -->
-                    @if(isset($row->broj_rezervacija))
-                        {{ $row->broj_rezervacija }}
-                    @elseif(isset($row->count))
-                        {{ $row->count }}
-                    @else
-                        0
-                    @endif
-                </td>
+                <td>{{ $naziv }}</td>
+                <td>{{ $rezervacijeLookup[$id] ?? 0 }}</td>
             </tr>
         @endforeach
         </tbody>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\VehicleType;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class VehicleTypeController extends Controller
 {
@@ -17,9 +18,11 @@ class VehicleTypeController extends Controller
     /**
      * Prikazuje sve tipove vozila.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        return response()->json(VehicleType::all());
+        $types = VehicleType::select('id', 'description_vehicle', 'price')->get();
+        // Ako želiš da bude baš niz (ne objekat sa "data"), koristi:
+        return response()->json($types);
     }
 
     /**

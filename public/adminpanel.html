@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kotorbus Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="src/style.css">
+  <script>
+    // Autentikacija: redirekcija ako nema tokena
+    if (!localStorage.getItem('admin_token')) {
+      window.location.href = 'admin-login.html';
+    }
+  </script>
+</head>
+<body>
+  <div class="admin-panel-wrapper">
+    <div class="admin-panel-box">
+      <header class="admin-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="flex:1;"></div>
+        <img src="src/logo.png" alt="Kotorbus Logo" class="logo" style="display:block; margin:auto;">
+        <div style="flex:1; display:flex; justify-content: flex-end; gap:10px; align-items:center;">
+        <img src="src/mne.png" alt="Crnogorski" style="width:32px; height:32px; cursor:pointer;">
+        </div>
+      </header>
+
+      <main class="main-container" style="display: flex; gap: 40px; align-items: flex-start;">
+        <nav id="admin-panel"></nav>
+        <section id="admin-section" style="display:block; min-width:340px;">
+          <h2 id="admin-title">Admin panel</h2>
+
+          <!-- Nedostupni termini (popunjeni rezervacijama) -->
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Nedostupni termini</h3>
+            <div id="unavailable-days-list" style="margin:10px 0;">
+              <div style="text-align: center; color:#666;">Učitavanje...</div>
+            </div>
+          </div>
+
+          <!-- Blokirani dani i termini (ručno blokirani) -->
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Blokirani dani i termini</h3>
+            <div id="blocked-days-list" style="margin:10px 0;">
+              <div style="text-align:center; color:#666;">Učitavanje...</div>
+            </div>
+          </div>
+
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Blokiraj termine za izabrani datum</h3>
+            <input type="date" id="block-slot-date" min="">
+            <div id="slots-checkbox-list" style="margin:10px 0;"></div>
+            <button id="block-slots-btn" type="button">Blokiraj izabrane termine</button>
+          </div>
+
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Blokiraj cijeli dan</h3>
+            <input type="date" id="block-day-date" min="">
+            <div id="day-status" style="margin:10px 0; padding:10px; border-radius:5px; display:none;"></div>
+            <button id="block-day-btn" type="button">Blokiraj dan</button>
+          </div>
+
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Pretraga rezervacija</h3>
+            <input type="text" id="search-merchant_transaction_id" placeholder="Merchant Transaction ID"><br>
+            <input type="date" id="search-date"><br>
+            <input type="text" id="search-user_name" placeholder="Ime i prezime"><br>
+            <input type="email" id="search-email" placeholder="Email adresa"><br>
+            <select id="search-vehicle_type_id">
+              <option value="">Izaberi tip vozila</option>
+            </select><br>
+            <input type="text" id="search-license_plate" placeholder="Registarska oznaka" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');"><br>
+            <select id="search-status">
+              <option value="">Izaberi status</option>
+              <option value="paid">Plaćeno</option>
+              <option value="free">Besplatno</option>
+            </select><br>
+            <button id="search-reservations-btn" type="button">Pretraži</button>
+            <div id="search-results" style="display:none; margin-top:10px;">
+              <!-- REZULTATI PRETRAGE -->
+            </div>
+            <div id="edit-reservation-form" style="display:none;">
+              <!-- FORMA ZA IZMENU -->
+            </div>
+          </div>
+
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Besplatna rezervacija (bez plaćanja)</h3>
+            <input type="text" id="free-user_name" placeholder="Ime i prezime"><br>
+            <select id="free-country">
+              <option value="">Izaberi državu</option>
+              <option value="ME">Crna Gora</option>
+              <option value="HR">Hrvatska</option>
+              <option value="RS">Srbija</option>
+              <option value="BA">Bosna i Hercegovina</option>
+              <option value="MK">Sjeverna Makedonija</option>
+              <option value="SI">Slovenija</option>
+              <option value="AL">Albanija</option>
+              <option value="AD">Andora</option>
+              <option value="AT">Austrija</option>
+              <option value="BY">Belorusija</option>
+              <option value="BE">Belgija</option>
+              <option value="BG">Bugarska</option>
+              <option value="CZ">Češka</option>
+              <option value="DK">Danska</option>
+              <option value="EE">Estonija</option>
+              <option value="FI">Finska</option>
+              <option value="FR">Francuska</option>
+              <option value="DE">Njemačka</option>
+              <option value="GR">Grčka</option>
+              <option value="HU">Mađarska</option>
+              <option value="IS">Island</option>
+              <option value="IE">Irska</option>
+              <option value="IT">Italija</option>
+              <option value="XK">Kosovo</option>
+              <option value="LV">Letonija</option>
+              <option value="LI">Lihtenštajn</option>
+              <option value="LT">Litvanija</option>
+              <option value="LU">Luksemburg</option>
+              <option value="MT">Malta</option>
+              <option value="MD">Moldavija</option>
+              <option value="MC">Monako</option>
+              <option value="NL">Holandija</option>
+              <option value="NO">Norveška</option>
+              <option value="PL">Poljska</option>
+              <option value="PT">Portugalija</option>
+              <option value="RO">Rumunija</option>
+              <option value="RU">Rusija</option>
+              <option value="SM">San Marino</option>
+              <option value="SK">Slovačka</option>
+              <option value="ES">Španija</option>
+              <option value="SE">Švedska</option>
+              <option value="CH">Švajcarska</option>
+              <option value="UA">Ukrajina</option>
+              <option value="GB">Velika Britanija</option>
+              <option value="VA">Vatikan</option>
+              <option value="TR">Turska</option>
+              <option value="IL">Izrael</option>
+              <option value="OTHER">Ostalo</option>
+            </select><br>
+            <input type="text" id="free-license_plate" placeholder="Registarska oznaka" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');"><br>
+            <input type="email" id="free-email" placeholder="Email"><br>
+            <select id="free-vehicle_type_id">
+              <option value="">Izaberi tip vozila</option>
+            </select><br>
+            <input type="date" id="free-reservation_date" min=""><br>
+            <select id="free-drop_off_time_slot_id"><option value="">Izaberi drop-off termin</option></select><br>
+            <select id="free-pick_up_time_slot_id"><option value="">Izaberi pick-up termin</option></select><br>
+            <button id="free-reservation-btn" type="button">Dodijeli besplatno</button>
+          </div>
+
+          <!-- Izveštaj - Email adrese -->
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Izvještaj – Email adrese</h3>
+            <ul id="report-emails-list"></ul>
+            <input type="email" id="new-report-email" placeholder="Novi email">
+            <button type="button" id="add-report-email-btn" style="background:#9c1420;color:#fff;width:100%;">Dodaj email</button>
+          </div>
+
+          <!-- Broj slotova -->
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Broj slotova</h3>
+            <span>Trenutno: <span id="current-num-slots"></span></span><br>
+            <input type="number" id="new-num-slots" min="1" max="100" placeholder="Novi broj">
+            <button type="button" id="update-num-slots-btn" style="background:#9c1420;color:#fff;width:100%;">Ažuriraj</button>
+          </div>
+
+          <!-- Izveštaji -->
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Izvještaji</h3>
+            <div style="margin-bottom: 15px;">
+              <h4 style="margin: 5px 0; color: #000;">Finansijski izvještaji</h4>
+              
+              <!-- Dnevni finansijski izveštaj -->
+              <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <strong>Dnevni finansijski izvještaj</strong><br>
+                <input type="date" id="daily-finance-date" max="" style="margin: 5px 0; width: 100%;">
+                <button type="button" id="daily-finance-report-btn" style="background:#9c1420;color:#fff;width:100%;margin:5px 0;">Generiši izvještaj</button>
+              </div>
+              
+              <!-- Mesečni finansijski izveštaj -->
+              <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <strong>Mjesečni finansijski izvještaj</strong><br>
+                <select id="monthly-finance-month" style="margin: 5px 0; width: 48%;">
+                  <option value="">Mjesec</option>
+                  <option value="01">Januar</option>
+                  <option value="02">Februar</option>
+                  <option value="03">Mart</option>
+                  <option value="04">April</option>
+                  <option value="05">Maj</option>
+                  <option value="06">Jun</option>
+                  <option value="07">Jul</option>
+                  <option value="08">Avgust</option>
+                  <option value="09">Septembar</option>
+                  <option value="10">Oktobar</option>
+                  <option value="11">Novembar</option>
+                  <option value="12">Decembar</option>
+                </select>
+                <select id="monthly-finance-year" style="margin: 5px 0; width: 48%; float: right;">
+                  <option value="">Godina</option>
+                </select>
+                <button type="button" id="monthly-finance-report-btn" style="background:#9c1420;color:#fff;width:100%;margin:5px 0;clear:both;">Generiši izvještaj</button>
+              </div>
+              
+              <!-- Godišnji finansijski izveštaj -->
+              <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <strong>Godišnji finansijski izvještaj</strong><br>
+                <select id="yearly-finance-year" style="margin: 5px 0; width: 100%;">
+                  <option value="">Godina</option>
+                </select>
+                <button type="button" id="yearly-finance-report-btn" style="background:#9c1420;color:#fff;width:100%;margin:5px 0;">Generiši izvještaj</button>
+              </div>
+            </div>
+            
+            <div>
+              <h4 style="margin: 5px 0; color: #000;">Izvještaji po tipu vozila</h4>
+              
+              <!-- Dnevni izveštaj po tipu vozila -->
+              <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <strong>Dnevni izvještaj po tipu vozila</strong><br>
+                <input type="date" id="daily-vehicle-date" max="" style="margin: 5px 0; width: 100%;">
+                <button type="button" id="daily-vehicle-report-btn" style="background:#9c1420;color:#fff;width:100%;margin:5px 0;">Generiši izvještaj</button>
+              </div>
+              
+              <!-- Mesečni izveštaj po tipu vozila -->
+              <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <strong>Mjesečni izvještaj po tipu vozila</strong><br>
+                <select id="monthly-vehicle-month" style="margin: 5px 0; width: 48%;">
+                  <option value="">Mjesec</option>
+                  <option value="01">Januar</option>
+                  <option value="02">Februar</option>
+                  <option value="03">Mart</option>
+                  <option value="04">April</option>
+                  <option value="05">Maj</option>
+                  <option value="06">Jun</option>
+                  <option value="07">Jul</option>
+                  <option value="08">Avgust</option>
+                  <option value="09">Septembar</option>
+                  <option value="10">Oktobar</option>
+                  <option value="11">Novembar</option>
+                  <option value="12">Decembar</option>
+                </select>
+                <select id="monthly-vehicle-year" style="margin: 5px 0; width: 48%; float: right;">
+                  <option value="">Godina</option>
+                </select>
+                <button type="button" id="monthly-vehicle-report-btn" style="background:#9c1420;color:#fff;width:100%;margin:5px 0;clear:both;">Generiši izvještaj</button>
+              </div>
+              
+              <!-- Godišnji izveštaj po tipu vozila -->
+              <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <strong>Godišnji izvještaj po tipu vozila</strong><br>
+                <select id="yearly-vehicle-year" style="margin: 5px 0; width: 100%;">
+                  <option value="">Godina</option>
+                </select>
+                <button type="button" id="yearly-vehicle-report-btn" style="background:#9c1420;color:#fff;width:100%;margin:5px 0;">Generiši izvještaj</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Analitika -->
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Analitika rezervacija</h3>
+            <div style="margin-bottom: 15px;">
+              <label>Od datuma:</label>
+              <input type="date" id="analytics-start-date" style="margin: 5px 0; width: 100%;"><br>
+              <label>Do datuma:</label>
+              <input type="date" id="analytics-end-date" style="margin: 5px 0; width: 100%;"><br>
+              <label style="display: flex; align-items: center; margin: 10px 0;">
+                <input type="checkbox" id="include-free-reservations" style="margin-right: 8px;">
+                Uključi besplatne rezervacije
+              </label>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+              <button type="button" id="time-slot-analytics-btn" style="background:#2196F3;color:#fff;width:100%;margin:5px 0;">Analiza zauzetosti po terminima</button>
+              <button type="button" id="vehicle-type-analytics-btn" style="background:#4CAF50;color:#fff;width:100%;margin:5px 0;">Analiza zauzetosti po tipovima vozila</button>
+              <button type="button" id="country-analytics-btn" style="background:#FF9800;color:#fff;width:100%;margin:5px 0;">Analiza zauzetosti po državama</button>
+            </div>
+            
+            <div id="analytics-results" style="display:none; margin-top: 20px;">
+              <h4 id="analytics-title" style="margin: 5px 0; color: #000;"></h4>
+              <div id="analytics-chart-container" style="position: relative; height: 400px; margin: 20px 0;">
+                <canvas id="analytics-chart"></canvas>
+              </div>
+              <div id="analytics-summary" style="margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px;"></div>
+            </div>
+          </div>
+
+
+
+          <!-- Neuspešna plaćanja -->
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Neuspješna plaćanja</h3>
+            <div style="margin-bottom: 15px;">
+              <p style="margin-bottom: 15px; color: #666; font-size: 14px;">
+                Učitajte CSV fajl sa neuspješnim transakcijama iz banke. Fajl treba da sadrži kolonu <strong>merchantTxId</strong>.
+              </p>
+              
+              <div style="margin-bottom: 15px;">
+                <label for="failed-payments-csv">Izaberite CSV fajl <span style="color: red;">*</span></label>
+                <input type="file" id="failed-payments-csv" accept=".csv" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;">
+              </div>
+              
+              <div style="margin-bottom: 15px;">
+                <label for="csv-preview">Pregled podataka:</label>
+                <div id="csv-preview" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; background: #f9f9f9; font-family: monospace; font-size: 12px; display: none;"></div>
+              </div>
+              
+              <button type="button" id="process-failed-payments-btn" style="background:#dc3545;color:#fff;width:100%;padding:12px;border:none;border-radius:4px;font-size:16px;font-weight:bold;cursor:pointer;" disabled>Obradi neuspješna plaćanja</button>
+              
+              <div id="failed-payments-result" style="margin-top: 15px; padding: 10px; border-radius: 4px; display: none;"></div>
+            </div>
+          </div>
+
+          <!-- Uspešna plaćanja -->
+          <div class="admin-panel-block" style="margin-bottom:24px;">
+            <h3>Uspješna plaćanja</h3>
+            <div style="margin-bottom: 15px;">
+              <p style="margin-bottom: 15px; color: #666; font-size: 14px;">
+                Učitajte CSV fajl sa uspješnim transakcijama iz banke. Fajl treba da sadrži kolone: <strong>merchantTxId</strong>, <strong>dateUser</strong>, <strong>amount</strong>, <strong>customerEmail</strong>, <strong>creditcardCardHolder</strong>, <strong>creditcardBinCountry</strong>.
+              </p>
+              
+              <div style="margin-bottom: 15px;">
+                <label for="successful-payments-csv">Izaberite CSV fajl <span style="color: red;">*</span></label>
+                <input type="file" id="successful-payments-csv" accept=".csv" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;">
+              </div>
+              
+              <div style="margin-bottom: 15px;">
+                <label for="successful-csv-preview">Pregled podataka:</label>
+                <div id="successful-csv-preview" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; background: #f9f9f9; font-family: monospace; font-size: 12px; display: none;"></div>
+              </div>
+              
+              <button type="button" id="process-successful-payments-btn" style="background:#28a745;color:#fff;width:100%;padding:12px;border:none;border-radius:4px;font-size:16px;font-weight:bold;cursor:pointer;" disabled>Provjeri uspješna plaćanja</button>
+              
+              <div id="successful-payments-result" style="margin-top: 15px; padding: 10px; border-radius: 4px; display: none;"></div>
+            </div>
+          </div>
+
+
+        </section>
+
+        <aside class="admin-panel-center" style="max-width: 400px; margin: 40px auto; background: #fff; border-radius: 10px; padding: 32px 24px; box-sizing: border-box;">
+          <!-- Dodaj ovde dodatne admin forme ili informacije po potrebi -->
+        </aside>
+      </main>
+
+      <!-- Modal za Terms and Conditions -->
+      <div id="terms-modal" style="display:none;">
+        <div class="modal-content">
+          <span class="close" id="close-terms">&times;</span>
+          <h2 id="terms-title">Terms and Conditions</h2>
+          <div style="max-height:70vh; overflow-y:auto;" id="terms-content"></div>
+        </div>
+      </div>
+
+      <footer style="text-align:center; margin-top:32px;">
+        <img src="src/logoop.png" alt="OpKotor" style="height:80px;">
+        <p><img src="src/bidon.svg" alt="Bidon" style="height: 1em; width: auto; vertical-align: middle; display: inline-block; margin-right: 5px;"> Bidonkaktus 🌵 &copy; 2025 Kotorbus</p>
+      </footer>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script src="src/admin.js"></script>
+    </div>
+  </div>
+</body>
+</html>
