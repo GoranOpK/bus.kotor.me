@@ -24,8 +24,8 @@ class SendYearlyFinanceReport extends Command
         // Dobijanje prethodne godine (da bi izvještaj bio za cijelu proteklu godinu)
         $year = Carbon::now()->subYear()->year;
 
-        // Dobavljanje ukupne zarade po mjesecima za izvještaj
-        $financePerMonth = $service->yearlyFinance($year);
+        // Dobavljanje ukupne zarade po mjesecima za izvještaj (kolekcija sa ['mjesec', 'prihod'])
+        $financePerMonth = $service->yearlyFinancePerMonth($year);
 
         // Izračun ukupne godišnje zarade
         $totalFinance = $financePerMonth->sum('prihod');
@@ -34,6 +34,7 @@ class SendYearlyFinanceReport extends Command
         $emails = [
             'prihodi@kotor.me',
             'mirjana.grbovic@kotor.me',
+            'informatika@kotor.me',
             // Dodaj još email adresa po potrebi
         ];
 

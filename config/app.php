@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'Europe/Belgrade',
 
     /*
     |--------------------------------------------------------------------------
@@ -243,5 +243,16 @@ return [
         'View' => Illuminate\Support\Facades\View::class,
 
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | System Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Default vrednosti za system konfiguraciju
+    |
+    */
+
+    'default_available_parking_slots' => env('DEFAULT_AVAILABLE_PARKING_SLOTS', 9),
 
 ];

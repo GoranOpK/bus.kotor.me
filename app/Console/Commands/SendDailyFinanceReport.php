@@ -14,22 +14,24 @@ use Illuminate\Support\Facades\Mail;
 class SendDailyFinanceReport extends Command
 {
     // Naziv komande koju pokrećeš iz terminala: php artisan reports:daily
-    protected $signature = 'reports:daily';
+    protected $signature = 'reports:daily-finance';
 
-    protected $description = 'Šalje dnevni izvještaj na zadate email adrese';
+    protected $description = 'Šalje dnevni finansijski izvještaj na zadate email adrese';
 
     public function handle(ReportService $service)
     {
         $date = now()->toDateString();
 
         // Dobavljanje podataka za izvještaj
-        $finance = $service->dailyFinance($date);
+        $finance = $service->dailyFinancialReport($date);
         $count = $service->dailyCount($date);
 
         // Definiši ili učitaj iz configa/baze email adrese kome šalješ izvještaj
         $emails = [
             'prihodi@kotor.me',
             'mirjana.grbovic@kotor.me',
+            'informatika@kotor.me',
+            
             // Dodaj još email adresa po potrebi
         ];
 
@@ -38,6 +40,6 @@ class SendDailyFinanceReport extends Command
             Mail::to($email)->send(new DailyFinanceReportMail($date, $finance, $count));
         }
 
-        $this->info('Dnevni izvještaj je poslat!');
+        $this->info('Dnevni finansijski izvještaj je poslat!');
     }
 }

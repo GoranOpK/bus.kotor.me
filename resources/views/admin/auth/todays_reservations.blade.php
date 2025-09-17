@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title> – Rezervisani Slotovi</title>
+    <title>– Rezervisani Slotovi</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f9f9fa; margin: 0; padding: 40px; }
         h2 { text-align: center; margin-bottom: 24px; }
@@ -17,7 +17,7 @@
     </style>
 </head>
 <body>
-    <h2> – Rezervisani Slotovi (danas)</h2>
+    <h2>– Rezervisani Slotovi (danas)</h2>
     <div class="server-time">
         Server vreme: <span id="serverTime">{{ $server_time ?? '' }}</span>
         <span class="refresh-hint">(stranica se automatski osvežava na 5 min)</span>
@@ -29,17 +29,17 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Slot #</th>
+                            <th>#</th>
                             <th>Tip vozila</th>
                             <th>Registarska oznaka</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($interval['vehicles'] as $ix => $vehicle)
+                        @forelse($interval['reservations'] as $ix => $res)
                             <tr>
                                 <td>{{ $ix + 1 }}</td>
-                                <td>{{ $vehicle['vehicle_type'] }}</td>
-                                <td>{{ $vehicle['license_plate'] }}</td>
+                                <td>{{ $res['vehicle_type'] }}</td>
+                                <td>{{ $res['license_plate'] }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -51,15 +51,13 @@
             </div>
         @empty
             <div class="interval-block">
-                <div class="interval-title">Nema dostupnih vremenskih intervala</div>
+                <div class="interval-title">Nema rezervisanih vremenskih slotova za danas</div>
             </div>
         @endforelse
     </div>
     <script>
         // Automatsko osvežavanje na 5 minuta
         setTimeout(function() { window.location.reload(); }, 5 * 60 * 1000);
-
-        // (Opcionalno) Ako koristiš AJAX za učitavanje podataka, ovde možeš umesto reload-a koristiti fetch
     </script>
 </body>
 </html>

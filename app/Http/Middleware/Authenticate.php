@@ -19,7 +19,7 @@ class Authenticate extends Middleware
             return null;
         }
 
-        // Za web rute, može redirect na login
-        return route('login');
+        // Za web rute, takođe vrati null da se vrati 401 umesto redirect-a
+        return null;
     }
 }

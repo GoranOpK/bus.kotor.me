@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Debug Test</title>
+</head>
+<body>
+    <h1>Payment Debug Test</h1>
+    <button onclick="testPayment()">Test Payment Endpoint</button>
+    <div id="results"></div>
+
+    <script>
+        async function testPayment() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Testing...</p>';
+
+            try {
+                // Step 1: Get CSRF cookie
+                console.log('Step 1: Getting CSRF cookie...');
+                await fetch('/sanctum/csrf-cookie', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                // Step 2: Test session first
+                console.log('Step 2: Testing session...');
+                const sessionResponse = await fetch('/test-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-XSRF-TOKEN': getCookie('XSRF-TOKEN'),
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        test: 'session_test',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                console.log('Session Response Status:', sessionResponse.status);
+                console.log('Session Response Headers:', Object.fromEntries(sessionResponse.headers.entries()));
+                
+                const sessionData = await sessionResponse.json();
+                console.log('Session Response Data:', sessionData);
+
+                // Step 3: Test payment endpoint
+                console.log('Step 3: Testing payment endpoint...');
+                const paymentResponse = await fetch('/procesiraj-placanje', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-XSRF-TOKEN': getCookie('XSRF-TOKEN'),
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        merchantTransactionId: 'test-' + Date.now(),
+                        test: true
+                    })
+                });
+
+                console.log('Payment Response Status:', paymentResponse.status);
+                console.log('Payment Response Headers:', Object.fromEntries(paymentResponse.headers.entries()));
+                
+                let paymentData;
+                try {
+                    paymentData = await paymentResponse.json();
+                } catch (e) {
+                    paymentData = await paymentResponse.text();
+                }
+                console.log('Payment Response Data:', paymentData);
+
+                // Display results
+                resultsDiv.innerHTML = `
+                    <h3>Test Results:</h3>
+                    <p><strong>Session Test:</strong> ${sessionResponse.status} - ${JSON.stringify(sessionData)}</p>
+                    <p><strong>Payment Test:</strong> ${paymentResponse.status} - ${JSON.stringify(paymentData)}</p>
+                    <p><strong>Current Cookies:</strong></p>
+                    <pre>${document.cookie}</pre>
+                `;
+
+            } catch (error) {
+                console.error('Test Error:', error);
+                resultsDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
+        // Log current cookies on page load
+        console.log('Current cookies:', document.cookie);
+    </script>
+</body>
+</html> 

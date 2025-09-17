@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kotorbus – Rezervisani Slotovi (Readonly admin)</title>
+  <link rel="stylesheet" href="src/style.css">
+  <script>
+  // Ako NIJE NI readonly_token NI admin_token, šalji na readonly-login.html
+  if (!localStorage.getItem('readonly_token') && !localStorage.getItem('admin_token')) {
+    window.location.href = 'readonly-login.html';
+  }
+</script>
+  <style>
+    .readonly-panel-block {
+      background: #fff;
+      margin-bottom: 32px;
+      padding: 22px 28px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px #e3e6f3;
+      min-width: 340px;
+    }
+    .readonly-panel-block h2 {
+      margin-top: 0;
+      color: #9e1321;
+      font-size: 1.28em;
+      text-align: center;
+    }
+    .interval-block {
+      margin-bottom: 28px;
+      background: #fafbfc;
+      border-radius: 8px;
+      box-shadow: 2px 2px 8px #ececec;
+      padding: 16px 14px;
+      min-width: 320px;
+      border: 1px solid #e7eaf0;
+    }
+    .interval-title {
+      font-size: 1.12em;
+      color: #9e1321;
+      margin-bottom: 10px;
+      font-weight: bold;
+      text-align: left;
+    }
+    table.time-slots-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10px;
+    }
+    table.time-slots-table th,
+    table.time-slots-table td {
+      border: 1px solid #c1d3e6;
+      padding: 7px 10px;
+      text-align: center;
+    }
+    table.time-slots-table th {
+      background: #e2eefd;
+      font-weight: bold;
+      color: #9e1321;
+    }
+    .empty {
+      color: #bbb;
+      font-style: italic;
+    }
+    .server-time {
+      text-align: center;
+      font-size: 0.95em;
+      color: #888;
+      margin-bottom: 6px;
+      margin-top: -16px;
+    }
+    .refresh-hint {
+      text-align: right;
+      font-size: 0.87em;
+      color: #aaa;
+    }
+    @media (max-width: 900px) {
+      .readonly-panel-block,
+      .interval-block { min-width: unset; width: 99%; padding: 10px 2vw;}
+      table.time-slots-table th, table.time-slots-table td { font-size: 0.96em; }
+    }
+  </style>
+  <!-- Zaštita pristupa: samo readonly/admin -->
+  <script>
+    // Ako nema ni jednog tokena, redirect na login
+    const readonlyToken = localStorage.getItem('readonly_token');
+    const adminToken = localStorage.getItem('admin_token');
+    if (!readonlyToken && !adminToken) {
+      window.location.href = 'readonly-login.html';
+    }
+  </script>
+</head>
+<body>
+  <header style="display: flex; align-items: center; justify-content: space-between;">
+    <div style="flex:1;"></div>
+    <img src="src/logo.png" alt="Kotorbus Logo" style="display:block; margin:auto;">
+    <div style="flex:1; display:flex; justify-content: flex-end; gap:10px; align-items:center;">
+    <img src="src/mne.png" alt="Crnogorski" id="lang-cg" style="width:32px; height:32px; cursor:pointer;">
+    </div>
+  </header>
+
+  <div class="main-container" style="display: flex; gap: 40px; align-items: flex-start; justify-content: center; margin-top: 42px;">
+    <div style="flex: 0 0 650px; max-width: 700px;">
+      <div class="readonly-panel-block">
+        <h2>Rezervisani slotovi za danas</h2>
+        <div class="server-time">
+          Server vrijeme: <span id="serverTime">--:--:--</span>
+          <span class="refresh-hint">(stranica se automatski osvježava na 5 min)</span>
+        </div>
+        <div id="intervals">
+          <div class="interval-block"><div class="interval-title">Učitavanje...</div></div>
+        </div>
+      </div>
+      
+      <!-- Pretraga rezervacija - samo uvid -->
+      <div class="readonly-panel-block">
+        <h2>Pretraga rezervacija</h2>
+        <div style="margin-bottom: 15px;">
+          <input type="date" id="search-date" placeholder="Datum rezervacije" style="width: 100%; margin-bottom: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"><br>
+          <input type="text" id="search-user_name" placeholder="Ime i prezime" style="width: 100%; margin-bottom: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"><br>
+          <input type="email" id="search-email" placeholder="Email adresa" style="width: 100%; margin-bottom: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"><br>
+          <select id="search-vehicle_type_id" style="width: 100%; margin-bottom: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="">Izaberi tip vozila</option>
+          </select><br>
+          <input type="text" id="search-license_plate" placeholder="Registarska oznaka" style="text-transform: uppercase; width: 100%; margin-bottom: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" oninput="this.value = this.value.toUpperCase().replace(/[^A-ZŠĐŽČĆ0-9]/g, '');"><br>
+          <button id="search-reservations-btn" type="button" style="width: 100%; padding: 10px; background: #9e1321; color: white; border: none; border-radius: 4px; cursor: pointer;">Pretraži</button>
+        </div>
+        <div id="search-results" style="display:none; margin-top:10px;">
+          <!-- REZULTATI PRETRAGE -->
+        </div>
+        <div id="reservation-details" style="display:none;">
+          <!-- DETALJI REZERVACIJE -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer style="text-align:center; margin-top:32px;">
+        <img src="src/logoop.png" alt="OpKotor" style="height:80px;">
+        <p><img src="src/bidon.svg" alt="Bidon" style="height: 1em; width: auto; vertical-align: middle; display: inline-block; margin-right: 5px;"> Bidonkaktus 🌵 &copy; 2025 Kotorbus</p>
+  </footer>
+  <script src="src/control.js"></script>
+</body>
+</html>

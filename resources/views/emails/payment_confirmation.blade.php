@@ -6,24 +6,49 @@
     <style>
         body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 14px; color: #222; }
         .footer { margin-top: 40px; font-size: 12px; color: #888; }
+        .language-section { margin-bottom: 30px; }
+        .language-title { font-weight: bold; color: #333; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <!-- Pozdrav korisniku -->
-    <p>Dear {{ $reservation->user_name }},</p>
-    <!-- Poruka korisniku da su u prilogu dva dokumenta -->
-    <p>Thank you for your payment. Attached to this email you will find two documents:</p>
-    <ul>
-        <li><strong>Invoice</strong></li>
-        <li><strong>Payment Confirmation</strong></li>
-    </ul>
-    <p>Please keep them for your records.</p>
-    <!-- Pozdrav od opštine -->
-    <p>Best regards,<br>
-    Municipality of Kotor</p>
-    <!-- Futer sa napomenom o automatskoj poruci -->
+    @php
+        // Definiši kodove jezika za našu regiju
+        $local_languages = ['me', 'sr', 'hr', 'ba', 'mk'];
+        $user_language = $user_language ?? 'en';
+        $user_name = $user_name ?? '';
+    @endphp
+
+    @if(in_array($user_language, $local_languages))
+        <!-- Montenegrin Section -->
+        <div class="language-section">
+            <p>Predmet: Potvrda plaćanja rezervacije time slotova - Opština Kotor</p>
+            <p>Poštovani{{ !empty($user_name) ? ', ' . $user_name : ',' }}</p>
+            <p>Vaša rezervacija je uspješno potvrđena!</p>
+            <p>U prilogu ovog email-a pronaći ćete vašu fakturu za plaćanje.</p>
+            <p>Molimo vas da je sačuvate za svoju evidenciju.</p>
+            <p>S poštovanjem,<br>
+            Opština Kotor</p>
+        </div>
+    @else
+        <!-- English Section -->
+        <div class="language-section">
+            <p>Subject: Confirmation of time slots reservation payment - Municipality of Kotor</p>
+            <p>Dear{{ !empty($user_name) ? ', ' . $user_name : ',' }}</p>
+            <p>Your reservation has been successfully confirmed!</p>
+            <p>Attached to this email you will find your Invoice for the payment.</p>
+            <p>Please keep it for your records.</p>
+            <p>Best regards,<br>
+            Municipality of Kotor</p>
+        </div>
+    @endif
+
+    <!-- Footer -->
     <div class="footer">
-        This message was generated automatically {{ \Carbon\Carbon::now()->format('d.m.Y H:i') }}
+        @if(in_array($user_language, $local_languages))
+            <div>Ova poruka je automatski generisana {{ \Carbon\Carbon::now()->format('d.m.Y H:i') }}</div>
+        @else
+            <div>This message was generated automatically {{ \Carbon\Carbon::now()->format('d.m.Y H:i') }}</div>
+        @endif
     </div>
 </body>
 </html>
