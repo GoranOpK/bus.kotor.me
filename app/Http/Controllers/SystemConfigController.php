@@ -12,7 +12,11 @@ class SystemConfigController extends Controller
      */
     public function getAvailableParkingSlots()
     {
+<<<<<<< HEAD
         $defaultValue = config('app.default_available_parking_slots', 9);
+=======
+        $defaultValue = config('app.default_available_parking_slots', 8);
+>>>>>>> edd871dd4444f817be418d934462960767b66424
         
         try {
             $value = SystemConfig::where('name', 'available_parking_slots')->value('value');

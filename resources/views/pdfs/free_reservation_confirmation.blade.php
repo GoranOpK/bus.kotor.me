@@ -5,7 +5,11 @@
     <title>Potvrda besplatne rezervacije</title>
     <style>
         body {
+<<<<<<< HEAD
             font-family: 'DejaVu Sans', Arial, sans-serif;
+=======
+            font-family: Arial, sans-serif;
+>>>>>>> edd871dd4444f817be418d934462960767b66424
             margin: 0;
             padding: 20px;
             font-size: 12px;

@@ -415,7 +415,11 @@ class ReservationController extends Controller
             $logParams = [
                 $temp->drop_off_time_slot_id,
                 $temp->pick_up_time_slot_id,
+<<<<<<< HEAD
                 "'" . date('Y-m-d', strtotime($temp->reservation_date)) . "'",
+=======
+                "'" . $temp->reservation_date . "'",
+>>>>>>> edd871dd4444f817be418d934462960767b66424
                 "'" . $temp->user_name . "'",
                 "'" . $temp->country . "'",
                 "'" . $temp->license_plate . "'",
@@ -427,7 +431,11 @@ class ReservationController extends Controller
                 "'" . ($temp->fiscal_ikof ?? '') . "'",
                 "'" . ($temp->fiscal_qr ?? '') . "'",
                 "'" . ($temp->fiscal_operator ?? '') . "'",
+<<<<<<< HEAD
                 "'" . ($fiscalDate ? date('Y-m-d', strtotime($fiscalDate)) : '') . "'"
+=======
+                "'" . $fiscalDate . "'"
+>>>>>>> edd871dd4444f817be418d934462960767b66424
             ];
 
             \Log::info('storeFromTemp - pozivam AddReservation proceduru', [
@@ -1163,7 +1171,11 @@ class ReservationController extends Controller
 
             // Izračunaj broj rezervacija na osnovu remaining
             // Dohvati maksimalni kapacitet iz system_config tabele (cache-ovano)
+<<<<<<< HEAD
             $defaultValue = config('app.default_available_parking_slots', 9);
+=======
+            $defaultValue = config('app.default_available_parking_slots', 8);
+>>>>>>> edd871dd4444f817be418d934462960767b66424
             $availableParkingSlots = cache()->remember('available_parking_slots', 300, function () use ($defaultValue) {
                 return \App\Models\SystemConfig::where('name', 'available_parking_slots')->value('value') ?? $defaultValue;
             });

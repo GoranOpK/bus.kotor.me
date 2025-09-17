@@ -94,7 +94,12 @@
     <div style="flex:1;"></div>
     <img src="src/logo.png" alt="Kotorbus Logo" style="display:block; margin:auto;">
     <div style="flex:1; display:flex; justify-content: flex-end; gap:10px; align-items:center;">
+<<<<<<< HEAD
     <img src="src/mne.png" alt="Crnogorski" id="lang-cg" style="width:32px; height:32px; cursor:pointer;">
+=======
+      <img src="src/gb.png" alt="English" id="lang-en" style="width:32px; height:32px; cursor:pointer;">
+      <img src="src/mne.png" alt="Crnogorski" id="lang-cg" style="width:32px; height:32px; cursor:pointer;">
+>>>>>>> edd871dd4444f817be418d934462960767b66424
     </div>
   </header>
 
@@ -103,7 +108,11 @@
       <div class="readonly-panel-block">
         <h2>Rezervisani slotovi za danas</h2>
         <div class="server-time">
+<<<<<<< HEAD
           Server vrijeme: <span id="serverTime">--:--:--</span>
+=======
+          Vrijeme: <span id="serverTime">--:--:--</span>
+>>>>>>> edd871dd4444f817be418d934462960767b66424
           <span class="refresh-hint">(stranica se automatski osvježava na 5 min)</span>
         </div>
         <div id="intervals">
@@ -121,7 +130,11 @@
           <select id="search-vehicle_type_id" style="width: 100%; margin-bottom: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
             <option value="">Izaberi tip vozila</option>
           </select><br>
+<<<<<<< HEAD
           <input type="text" id="search-license_plate" placeholder="Registarska oznaka" style="text-transform: uppercase; width: 100%; margin-bottom: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" oninput="this.value = this.value.toUpperCase().replace(/[^A-ZŠĐŽČĆ0-9]/g, '');"><br>
+=======
+          <input type="text" id="search-license_plate" placeholder="Registarska oznaka" style="text-transform: uppercase; width: 100%; margin-bottom: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');"><br>
+>>>>>>> edd871dd4444f817be418d934462960767b66424
           <button id="search-reservations-btn" type="button" style="width: 100%; padding: 10px; background: #9e1321; color: white; border: none; border-radius: 4px; cursor: pointer;">Pretraži</button>
         </div>
         <div id="search-results" style="display:none; margin-top:10px;">
@@ -134,9 +147,15 @@
     </div>
   </div>
 
+<<<<<<< HEAD
   <footer style="text-align:center; margin-top:32px;">
         <img src="src/logoop.png" alt="OpKotor" style="height:80px;">
         <p><img src="src/bidon.svg" alt="Bidon" style="height: 1em; width: auto; vertical-align: middle; display: inline-block; margin-right: 5px;"> Bidonkaktus 🌵 &copy; 2025 Kotorbus</p>
+=======
+  <footer>
+    <img src="src/logoop.png" alt="OpKotor" style="height:80px;">
+    <p>Bidonkaktus 🌵 &copy; 2025 Kotorbus</p>
+>>>>>>> edd871dd4444f817be418d934462960767b66424
   </footer>
   <script src="src/control.js"></script>
 </body>

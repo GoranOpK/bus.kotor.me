@@ -12,6 +12,7 @@
 </head>
 <body>
     @php
+<<<<<<< HEAD
         // Definiši kodove jezika za našu regiju
         $local_languages = ['me', 'sr', 'hr', 'ba', 'mk'];
         $user_language = $user_language ?? 'en';
@@ -34,20 +35,52 @@
         <div class="language-section">
             <p>Subject: Confirmation of time slots reservation payment - Municipality of Kotor</p>
             <p>Dear{{ !empty($user_name) ? ', ' . $user_name : ',' }}</p>
+=======
+        // Postavi default jezik pošto smo odustali od višejezičnosti
+        $user_language = $user_language ?? 'en';
+    @endphp
+
+    @if($user_language === 'en')
+        <!-- English Section -->
+        <div class="language-section">
+            <p>Subject: Confirmation of Parking Reservation Payment - Municipality of Kotor</p>
+            <p>Dear,</p>
+>>>>>>> edd871dd4444f817be418d934462960767b66424
             <p>Your reservation has been successfully confirmed!</p>
             <p>Attached to this email you will find your Invoice for the payment.</p>
             <p>Please keep it for your records.</p>
             <p>Best regards,<br>
             Municipality of Kotor</p>
         </div>
+<<<<<<< HEAD
+=======
+    @else
+        <!-- Montenegrin Section -->
+        <div class="language-section">
+            <p>Predmet: Potvrda plaćanja rezervacije parkinga - Opština Kotor</p>
+            <p>Poštovani,</p>
+            <p>Vaša rezervacija je uspješno potvrđena!</p>
+            <p>U prilogu ovog email-a pronaći ćete vašu fakturu za plaćanje.</p>
+            <p>Molimo vas da je sačuvate za svoju evidenciju.</p>
+            <p>S poštovanjem,<br>
+            Opština Kotor</p>
+        </div>
+>>>>>>> edd871dd4444f817be418d934462960767b66424
     @endif
 
     <!-- Footer -->
     <div class="footer">
+<<<<<<< HEAD
         @if(in_array($user_language, $local_languages))
             <div>Ova poruka je automatski generisana {{ \Carbon\Carbon::now()->format('d.m.Y H:i') }}</div>
         @else
             <div>This message was generated automatically {{ \Carbon\Carbon::now()->format('d.m.Y H:i') }}</div>
+=======
+        @if($user_language === 'en')
+            <div>This message was generated automatically {{ \Carbon\Carbon::now()->format('d.m.Y H:i') }}</div>
+        @else
+            <div>Ova poruka je automatski generisana {{ \Carbon\Carbon::now()->format('d.m.Y H:i') }}</div>
+>>>>>>> edd871dd4444f817be418d934462960767b66424
         @endif
     </div>
 </body>

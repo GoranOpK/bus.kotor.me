@@ -32,7 +32,10 @@
             ];
             // Mapiraj rezervacije po tipu za brži lookup
             $rezervacijeLookup = [];
+<<<<<<< HEAD
             $ukupno = 0;
+=======
+>>>>>>> edd871dd4444f817be418d934462960767b66424
             foreach ($reservationsByType as $row) {
                 $id = $row->vehicle_type_id ?? null;
                 $broj = $row->broj_rezervacija ?? $row->count ?? 0;
@@ -43,6 +46,7 @@
         @endphp
 
         @foreach($tipovi as $id => $naziv)
+<<<<<<< HEAD
             @php
                 $broj = $rezervacijeLookup[$id] ?? 0;
                 $ukupno += $broj;
@@ -50,6 +54,11 @@
             <tr>
                 <td>{{ $naziv }}</td>
                 <td>{{ $broj }}</td>
+=======
+            <tr>
+                <td>{{ $naziv }}</td>
+                <td>{{ $rezervacijeLookup[$id] ?? 0 }}</td>
+>>>>>>> edd871dd4444f817be418d934462960767b66424
             </tr>
         @endforeach
             <tr class="total-row">

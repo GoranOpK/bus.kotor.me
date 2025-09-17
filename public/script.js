@@ -1,5 +1,99 @@
 // --- GLOBAL FUNCTIONS ---
 
+// Session-based rezervacija zaštita
+const RESERVATION_SESSION_KEY = 'bus_kotor_active_reservation';
+console.log('Script loaded - RESERVATION_SESSION_KEY:', RESERVATION_SESSION_KEY);
+
+// Funkcija za proveru aktivne rezervacije u session-u
+function getActiveReservation() {
+  console.log('=== getActiveReservation POZVAN ===');
+  console.log('getActiveReservation - proveravam sessionStorage...');
+  console.log('getActiveReservation - sessionStorage available:', typeof sessionStorage !== 'undefined');
+  const sessionData = sessionStorage.getItem(RESERVATION_SESSION_KEY);
+  console.log('getActiveReservation - sessionData:', sessionData);
+  if (!sessionData) {
+    console.log('getActiveReservation - nema sessionData, vraćam null');
+    return null;
+  }
+  
+  try {
+    const reservation = JSON.parse(sessionData);
+    console.log('getActiveReservation - parsed reservation:', reservation);
+    // Proveri da li je rezervacija još važeća
+    if (reservation.expires_at && new Date(reservation.expires_at) > new Date()) {
+      console.log('getActiveReservation - rezervacija je važeća, vraćam:', reservation);
+      return reservation;
+    } else {
+      // Rezervacija je istekla, obriši iz session-a
+      console.log('getActiveReservation - rezervacija je istekla, brišem...');
+      sessionStorage.removeItem(RESERVATION_SESSION_KEY);
+      console.log('getActiveReservation - rezervacija istekla, vraćam null');
+      return null;
+    }
+  } catch (e) {
+    console.error('Greška pri parsiranju session rezervacije:', e);
+    sessionStorage.removeItem(RESERVATION_SESSION_KEY);
+    console.log('getActiveReservation - greška pri parsiranju, vraćam null');
+    return null;
+  }
+}
+
+// Funkcija za čuvanje aktivne rezervacije u session-u
+function setActiveReservation(reservation) {
+  console.log('=== setActiveReservation POZVAN ===');
+  console.log('setActiveReservation - čuvam rezervaciju:', reservation);
+  sessionStorage.setItem(RESERVATION_SESSION_KEY, JSON.stringify(reservation));
+  console.log('setActiveReservation - rezervacija sačuvana u sessionStorage');
+  console.log('setActiveReservation - proveravam da li je sačuvano:', sessionStorage.getItem(RESERVATION_SESSION_KEY));
+}
+
+// Funkcija za brisanje aktivne rezervacije iz session-a
+function clearActiveReservation() {
+  console.log('=== clearActiveReservation POZVAN ===');
+  console.log('clearActiveReservation - brišem rezervaciju iz session-a');
+  sessionStorage.removeItem(RESERVATION_SESSION_KEY);
+  console.log('clearActiveReservation - rezervacija obrisana iz sessionStorage');
+  console.log('clearActiveReservation - proveravam da li je obrisano:', sessionStorage.getItem(RESERVATION_SESSION_KEY));
+}
+
+// Funkcija za proveru da li korisnik već ima aktivnu rezervaciju
+function hasActiveReservation() {
+  console.log('=== hasActiveReservation POZVAN ===');
+  const reservation = getActiveReservation();
+  console.log('hasActiveReservation - proveravam:', reservation);
+  const result = reservation !== null;
+  console.log('hasActiveReservation - rezultat:', result);
+  return result;
+}
+
+// Funkcija za sinhronizaciju session-a između tab-ova
+function setupSessionSync() {
+  // Slušaj promene u sessionStorage između tab-ova
+  window.addEventListener('storage', function(e) {
+    if (e.key === RESERVATION_SESSION_KEY) {
+      if (e.newValue) {
+        // Nova rezervacija je kreirana u drugom tab-u
+        try {
+          const newReservation = JSON.parse(e.newValue);
+          currentSlotReservation = newReservation;
+          if (newReservation.expires_at) {
+            startReservationCountdown(newReservation.expires_at);
+          }
+        } catch (e) {
+          console.error('Greška pri parsiranju session promene:', e);
+        }
+      } else {
+        // Rezervacija je obrisana u drugom tab-u
+        currentSlotReservation = null;
+        if (reservationTimer) {
+          clearInterval(reservationTimer);
+        }
+        checkAndToggleReserveButton();
+      }
+    }
+  });
+}
+
 // Helper function to check if a time slot allows same arrival and departure
 function allowsSameArrivalDeparture(timeSlot) {
   // Termini koji dozvoljavaju isti dolazak i odlazak:
@@ -9,80 +103,10 @@ function allowsSameArrivalDeparture(timeSlot) {
   return specialTimeSlots.includes(timeSlot);
 }
 
-// Globalna funkcija za proveru da li je datum u prošlosti
-function isDateInPast(date) {
-  const today = new Date();
-  const todayStr = today.getFullYear() + '-' + 
-                   String(today.getMonth() + 1).padStart(2, '0') + '-' + 
-                   String(today.getDate()).padStart(2, '0');
-  return date < todayStr;
-}
-
-// Globalna funkcija za dobijanje današnjeg datuma kao string
-function getTodayString() {
-  const today = new Date();
-  return today.getFullYear() + '-' + 
-         String(today.getMonth() + 1).padStart(2, '0') + '-' + 
-         String(today.getDate()).padStart(2, '0');
-}
-
-// Funkcija za validaciju email adrese
-function isValidEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-// Funkcija za validaciju registarskih tablica
-function isValidLicensePlate(plate) {
-<<<<<<< HEAD
-  // Osnovna validacija - bar 3 karaktera, slova (uključujući dijakritičke simbole), brojevi i crtice
-  const plateRegex = /^[A-ZŠĐŽČĆ0-9\-]{3,15}$/;
-=======
-  // Osnovna validacija - bar 3 karaktera, samo slova, brojevi i crtice
-  const plateRegex = /^[A-Z0-9\-]{3,15}$/;
->>>>>>> edd871dd4444f817be418d934462960767b66424
-  return plateRegex.test(plate);
-}
-
-// Funkcija za validaciju naziva kompanije
-function isValidCompanyName(name) {
-  return name && name.trim().length >= 2 && name.trim().length <= 100;
-}
-
 // Function to show free reservation success modal
-function showFreeReservationSuccess(message = null) {
+function showFreeReservationSuccess() {
   const modal = document.getElementById('free-reservation-modal');
   if (modal) {
-    const currentLang = getCurrentLanguage();
-    
-    // Osiguraj da su svi elementi modala ažurirani sa trenutnim jezikom
-    setLanguage(currentLang);
-    
-    // Ako je prosleđena poruka, ažuriraj modal
-    if (message) {
-      const titleElement = document.getElementById('free-reservation-title');
-      const textElement = document.getElementById('free-reservation-text');
-      const confirmationElement = document.getElementById('free-reservation-confirmation');
-      const checkEmailElement = document.getElementById('free-reservation-check-email');
-      const closeButton = document.getElementById('close-free-reservation-btn');
-      
-      if (titleElement) {
-        titleElement.textContent = translations[currentLang].freeReservationSuccess;
-      }
-      if (textElement) {
-        textElement.textContent = message;
-      }
-      if (confirmationElement) {
-        confirmationElement.textContent = '✅ ' + translations[currentLang].confirmationSent;
-      }
-      if (checkEmailElement) {
-        checkEmailElement.textContent = translations[currentLang].checkEmail;
-      }
-      if (closeButton) {
-        closeButton.textContent = translations[currentLang].close;
-      }
-    }
-    
     modal.style.display = 'block';
   }
 }
@@ -95,61 +119,10 @@ function hideFreeReservationSuccess() {
   }
 }
 
-// Funkcija za čišćenje svih timera i cache-a
-function cleanupAllTimersAndCache() {
-  // Očisti sve timere
-  if (reservationTimer) {
-    clearInterval(reservationTimer);
-    reservationTimer = null;
-  }
-  if (checkButtonDebounceTimer) {
-    clearTimeout(checkButtonDebounceTimer);
-    checkButtonDebounceTimer = null;
-  }
-  
-  // Očisti cache
-  clearSlotAvailabilityCache();
-  
-  // Resetuj rezervaciju
-  currentSlotReservation = null;
-  
-  // Resetuj flagove
-  isCheckingButton = false;
-  lastApiCallTime = 0;
-}
-
 function fetchAvailableSlotsForDate(date, callback) {
-  // PROVERA: Da li je datum u prošlosti
-  if (isDateInPast(date)) {
-    console.log('fetchAvailableSlotsForDate - datum u prošlosti, ne pozivam API:', date);
-    callback([]); // Vrati prazan niz
-    return;
-  }
-  
-  console.log('fetchAvailableSlotsForDate - pozivam API za datum:', date);
-  
-  // Timeout za API poziv (10 sekundi)
-  const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error('API timeout')), 10000);
-  });
-  
-  const fetchPromise = fetch('/api/timeslots/available?date=' + encodeURIComponent(date))
-    .then(res => {
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      }
-      return res.json();
-    });
-  
-  Promise.race([fetchPromise, timeoutPromise])
-    .then(callback)
-    .catch(error => {
-      console.error('fetchAvailableSlotsForDate - greška:', error);
-      if (error.message.includes('timeout')) {
-        console.warn('Timeout pri učitavanju dostupnih slotova');
-      }
-      callback([]); // Vrati prazan niz u slučaju greške
-    });
+  fetch('/api/timeslots/available?date=' + encodeURIComponent(date))
+    .then(res => res.json())
+    .then(callback);
 }
 function populateTimeSlotSelect(selectId, times, selectedValue = '') {
   const select = document.getElementById(selectId);
@@ -159,18 +132,12 @@ function populateTimeSlotSelect(selectId, times, selectedValue = '') {
   const reservationDateInput = document.getElementById('reservation_date');
   const selectedDate = reservationDateInput?.value;
   const now = new Date();
-  const todayStr = getTodayString();
+  const todayStr = now.toISOString().slice(0, 10);
 
   let minTime = null;
   if (selectedDate === todayStr) {
     // Dozvoli trenutni termin - ne dodajemo +1 minut
     minTime = now.toTimeString().slice(0, 5);
-  }
-
-  // PROVERA: Da li je datum u prošlosti
-  if (isDateInPast(selectedDate)) {
-    console.log('populateTimeSlotSelect - datum u prošlosti, ne prikazujem termine:', selectedDate);
-    return;
   }
 
   times.forEach(time => {
@@ -211,7 +178,7 @@ function filterTimeSlots() {
   const reservationDateInput = document.getElementById('reservation_date');
   const selectedDate = reservationDateInput?.value;
   const now = new Date();
-  const todayStr = getTodayString();
+  const todayStr = now.toISOString().slice(0, 10);
   
   let minTime = null;
   if (selectedDate === todayStr) {
@@ -219,14 +186,6 @@ function filterTimeSlots() {
     minTime = now.toTimeString().slice(0, 5);
   }
   
-  // PROVERA: Da li je datum u prošlosti
-  if (isDateInPast(selectedDate)) {
-    console.log('filterTimeSlots - datum u prošlosti, ne prikazujem termine:', selectedDate);
-    arrivalSelect.innerHTML = '<option value="">Datum u prošlosti</option>';
-    departureSelect.innerHTML = '<option value="">Datum u prošlosti</option>';
-    return;
-  }
-
   // Filtriraj termine za tekući datum
   const availableTimeSlots = allTimeSlots.filter(time => {
     if (!minTime) {
@@ -300,44 +259,6 @@ function filterTimeSlots() {
   }
 }
 
-// Cache za available_parking_slots
-let availableParkingSlotsCache = null;
-let availableParkingSlotsCacheTime = 0;
-const AVAILABLE_PARKING_SLOTS_CACHE_DURATION = 5 * 60 * 1000; // 5 minuta
-
-// Funkcija za dohvatanje available_parking_slots iz API-ja
-async function getAvailableParkingSlots() {
-  const now = Date.now();
-  
-  // Proveri cache
-  if (availableParkingSlotsCache && (now - availableParkingSlotsCacheTime) < AVAILABLE_PARKING_SLOTS_CACHE_DURATION) {
-    return availableParkingSlotsCache;
-  }
-  
-  try {
-    const response = await fetch('/api/system-config/available-parking-slots');
-    const data = await response.json();
-<<<<<<< HEAD
-    const value = data.value || 9; // fallback na 9 ako API ne radi (može se promeniti u config)
-=======
-    const value = data.value || 8; // fallback na 8 ako API ne radi (može se promeniti u config)
->>>>>>> edd871dd4444f817be418d934462960767b66424
-    
-    // Sačuvaj u cache
-    availableParkingSlotsCache = value;
-    availableParkingSlotsCacheTime = now;
-    
-    return value;
-  } catch (error) {
-    console.error('Error fetching available parking slots:', error);
-<<<<<<< HEAD
-    return availableParkingSlotsCache ||9; // koristi cache ili fallback na 9 (može se promeniti u config)
-=======
-    return availableParkingSlotsCache ||8; // koristi cache ili fallback na 8 (može se promeniti u config)
->>>>>>> edd871dd4444f817be418d934462960767b66424
-  }
-}
-
 // --- TRANSLATIONS ---
 
 const translations = {
@@ -358,13 +279,7 @@ const translations = {
     freeParking: "Parking is free for this time segment!",
     parkingNotice: `If the carrier is unable to drop off and pick up passengers at the time slot for which the fee was paid, this action must be performed at the <a href="https://maps.app.goo.gl/oXD6SEzjyXtm4c586" target="_blank">Autoboka</a> parking and the <a href="https://maps.app.goo.gl/kPAD6mipzZTjCCYE7" target="_blank">Puč</a> parking.`,
     privacy: "I agree to the privacy policy",
-    privacyLink: "Read policy",
-    // Free reservation modal translations
-    freeReservationSuccess: "Free reservation successful!",
-    freeReservationCreated: "Your free reservation has been created successfully.",
-    confirmationSent: "Confirmation has been sent to your email",
-    checkEmail: "Check your email address for reservation details",
-    close: "Close"
+    privacyLink: "Read policy"
   },
   mne: {
     pickDate: "Izaberite datum",
@@ -394,9 +309,6 @@ const translations = {
 };
 
 function setLanguage(lang) {
-  // Postavi lang atribut na document element
-  document.documentElement.lang = lang;
-  
   const ids = [
     ['pick-date-label', 'pickDate'],
     ['arrival-label', 'arrival'],
@@ -495,12 +407,6 @@ function setLanguage(lang) {
 
   const showTerms = document.getElementById('show-terms');
   if (showTerms) showTerms.textContent = translations[lang].terms;
-  
-  // Ažuriraj opacity jezičkih dugmića
-  const langEn = document.getElementById('lang-en');
-  const langCg = document.getElementById('lang-cg');
-  if (langEn) langEn.style.opacity = lang === 'en' ? '1' : '0.5';
-  if (langCg) langCg.style.opacity = lang === 'mne' ? '1' : '0.5';
 }
 
 // --- ISO2 to ISO3 mapping for billing_country ---
@@ -522,47 +428,11 @@ function getCookie(name) {
   return null;
 }
 
-// --- CSRF SANCTUM: Pozovi samo ako nema XSRF-TOKEN kolačića ---
+// --- CSRF SANCTUM: Pozovi samo ako nema XSRF-TOKEN kolaÄiÄ‡a ---
 async function ensureCsrfCookie() {
   if (!getCookie('XSRF-TOKEN')) {
-    try {
-      // Timeout za CSRF cookie fetch (5 sekundi)
-      const csrfTimeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('CSRF API timeout')), 5000);
-      });
-      
-      const csrfFetchPromise = fetch('/sanctum/csrf-cookie', { credentials: 'include' })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`CSRF cookie fetch failed: ${response.status}`);
-          }
-          return response;
-        });
-      
-      await Promise.race([csrfFetchPromise, csrfTimeoutPromise]);
-      console.log('CSRF token uspješno dobavljen');
-    } catch (error) {
-      console.error('ensureCsrfCookie - greška:', error);
-      if (error.message.includes('timeout')) {
-        throw new Error('Timeout pri dobavljanju CSRF token-a');
-      }
-      throw new Error('Neuspješno dobavljanje CSRF token-a: ' + (error.message || 'Nepoznata greška'));
-    }
+    await fetch('/sanctum/csrf-cookie', { credentials: 'include' });
   }
-}
-
-// Funkcija za dobavljanje CSRF token-a iz kolačića
-function getCsrfToken() {
-  return getCookie('XSRF-TOKEN');
-}
-
-// Funkcija za dodavanje CSRF token-a u headers
-function addCsrfHeaders(headers = {}) {
-  const token = getCsrfToken();
-  if (token) {
-    headers['X-XSRF-TOKEN'] = token;
-  }
-  return headers;
 }
 
 // --- i18n helper funkcije ---
@@ -580,10 +450,6 @@ const userMessages = {
         'mne': 'Vrijeme dolaska i odlaska ne mogu biti isti za odabrani termin.'
     },
     'slot_reserved_10min': {
-        'en': '⏰ Slot reserved for you for 10 minutes. Please complete payment.',
-        'mne': '⏰ Slot je rezervisan za Vas na 10 minuta. Molimo završite plaćanje.'
-    },
-    'slot_reserved_for_you': {
         'en': '⏰ Slot reserved for you for 10 minutes. Please complete payment.',
         'mne': '⏰ Slot je rezervisan za Vas na 10 minuta. Molimo završite plaćanje.'
     },
@@ -655,21 +521,45 @@ const userMessages = {
         'en': '⌛ Reservation has expired. Please try again.',
         'mne': '⌛ Rezervacija je istekla. Molimo pokušajte ponovo.'
     },
-    'critical_slot_warning': {
-        'en': '⚠️ Critical slot detected! Please fill all fields to reserve this slot.',
-        'mne': '⚠️ Detektovan kritičan slot! Molimo popunite sva polja da rezervišete ovaj slot.'
+    'slot_reservation_error': {
+        'en': 'Error reserving slot.',
+        'mne': 'Greška pri rezervaciji slota.'
     },
-    'critical_slot_reservation_error': {
-        'en': '❌ Failed to reserve critical slot. Please try again.',
-        'mne': '❌ Greška pri rezervaciji kritičnog slota. Molimo pokušajte ponovo.'
+    'server_communication_error': {
+        'en': 'Error communicating with server.',
+        'mne': 'Greška pri komuniciranju sa serverom.'
     },
-    'slots_unavailable_payment': {
-        'en': '❌ Selected time slots are no longer available. Please choose different times.',
-        'mne': '❌ Odabrani vremenski slotovi više nisu dostupni. Molimo izaberite druga vremena.'
+    'reserve': {
+        'en': 'Reserve',
+        'mne': 'Rezerviši'
     },
-    'availability_check_error': {
-        'en': '❌ Error checking slot availability. Please try again.',
-        'mne': '❌ Greška pri proveri dostupnosti slotova. Molimo pokušajte ponovo.'
+    'creating_free_reservation': {
+        'en': 'Creating free reservation...',
+        'mne': 'Kreiram besplatnu rezervaciju...'
+    },
+    'free_reservation_successful': {
+        'en': 'Free reservation successful! Email with invoice has been sent.',
+        'mne': 'Besplatna rezervacija uspješna! Email sa računom je poslat.'
+    },
+    'free_reservation_error': {
+        'en': 'Error creating free reservation: ',
+        'mne': 'Greška pri kreiranju besplatne rezervacije: '
+    },
+    'sending': {
+        'en': 'Sending...',
+        'mne': 'Slanje...'
+    },
+    'temp_data_save_failed': {
+        'en': 'Failed to save temporary data!',
+        'mne': 'Neuspješan upis privremenih podataka!'
+    },
+    'temp_data_error': {
+        'en': 'Error saving temporary data: ',
+        'mne': 'Greška pri upisu privremenih podataka: '
+    },
+    'reservation_successful': {
+        'en': 'Reservation successful!',
+        'mne': 'Rezervacija uspješna!'
     }
 };
 
@@ -683,11 +573,8 @@ function getUserMessage(key, lang = null) {
 
 // Helper funkcija za dobijanje trenutnog jezika
 function getCurrentLanguage() {
-    const docLang = document.documentElement.lang;
-    const langCgOpacity = document.getElementById('lang-cg')?.style.opacity;
-    const result = docLang || (langCgOpacity === '0.5' ? 'en' : 'mne');
-    
-    return result;
+    return document.documentElement.lang || 
+           (document.getElementById('lang-cg')?.style.opacity === '0.5' ? 'en' : 'mne');
 }
 
 // --- Slot popunjenost provjera ---
@@ -695,66 +582,21 @@ function getCurrentLanguage() {
 async function checkSlotAvailability(date, slotId, type = 'drop_off') {
   if (!date || !slotId) return { count: 0, remaining: 0, available: false };
   
-  // Proveri cache prvo
-  const cacheKey = `${date}-${slotId}-${type}`;
-  const cachedData = slotAvailabilityCache.get(cacheKey);
-  const now = Date.now();
-  
-  if (cachedData && (now - cachedData.timestamp) < CACHE_DURATION_MS) {
-    return cachedData.data;
-  }
-  
-  // Rate limiting - proveri da li je prošlo dovoljno vremena od poslednjeg API poziva
-  if (now - lastApiCallTime < API_RATE_LIMIT_MS) {
-    await new Promise(resolve => setTimeout(resolve, API_RATE_LIMIT_MS - (now - lastApiCallTime)));
-  }
-  
   try {
-    lastApiCallTime = Date.now(); // Ažuriraj vreme poslednjeg API poziva
+    const res = await fetch(`/api/slot-count?date=${encodeURIComponent(date)}&slot_id=${slotId}&type=${type}`);
+    const data = await res.json();
     
-    // Timeout za API poziv (5 sekundi)
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('API timeout')), 5000);
-    });
-    
-    const fetchPromise = fetch(`/api/slot-count?date=${encodeURIComponent(date)}&slot_id=${slotId}&type=${type}`)
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
-        return res.json();
-      });
-    
-    const data = await Promise.race([fetchPromise, timeoutPromise]);
-    
-    // Dohvati max_capacity ako nije dostupan u odgovoru
-    let maxCapacity = data.max_capacity;
-    if (!maxCapacity) {
-      maxCapacity = await getAvailableParkingSlots();
-    }
-    
-    // Kreiraj objekat sa svim relevantnim podacima iz dinamičke tabele
-    const result = {
+    // Vrati objekat sa svim relevantnim podacima iz dinamičke tabele
+    return {
       count: data.count || 0,
       remaining: data.remaining || 0,
       available: data.available || false,
-      max_capacity: maxCapacity,
+      max_capacity: data.max_capacity || 7,
       table_used: data.table_used || null,
       fallback: data.fallback || false
     };
-    
-    // Sačuvaj u cache
-    slotAvailabilityCache.set(cacheKey, {
-      data: result,
-      timestamp: now
-    });
-    
-    return result;
   } catch (error) {
     console.error('Greška pri proveri dostupnosti slota:', error);
-    if (error.message.includes('timeout')) {
-      console.warn('Timeout pri proveri dostupnosti slota');
-    }
     return { count: 0, remaining: 0, available: false };
   }
 }
@@ -762,177 +604,35 @@ async function checkSlotAvailability(date, slotId, type = 'drop_off') {
 // Globalna varijabla za čuvanje rezervacije slota
 let currentSlotReservation = null;
 let reservationTimer = null;
-let checkButtonDebounceTimer = null;
-let isCheckingButton = false; // Flag za sprečavanje simultanih poziva
-let lastApiCallTime = 0; // Za rate limiting API poziva
-const API_RATE_LIMIT_MS = 1000; // Minimalno 1 sekunda između API poziva
-let slotAvailabilityCache = new Map(); // Cache za slot availability podatke
-const CACHE_DURATION_MS = 30000; // 30 sekundi cache
-
-// Funkcija za čišćenje cache-a
-function clearSlotAvailabilityCache() {
-  slotAvailabilityCache.clear();
-}
-
-// Funkcija za proveru da li su sva polja forme popunjena
-function isFormComplete() {
-  const companyName = document.getElementById('company_name')?.value || '';
-  const country = document.getElementById('country-input')?.value || '';
-  const registrationInput = document.getElementById('registration-input')?.value || '';
-  const vehicleTypeId = document.getElementById('vehicle_type_id')?.value || '';
-  const email = document.getElementById('email')?.value || '';
-  
-  // Osnovna provera da li su polja popunjena
-  if (!companyName || !country || !registrationInput || !vehicleTypeId || !email) {
-    return false;
-  }
-  
-  // Validacija email adrese
-  if (!isValidEmail(email)) {
-    return false;
-  }
-  
-  // Validacija registarskih tablica
-  if (!isValidLicensePlate(registrationInput)) {
-    return false;
-  }
-  
-  // Validacija naziva kompanije
-  if (!isValidCompanyName(companyName)) {
-    return false;
-  }
-  
-  return true;
-}
-
-// Funkcija za ažuriranje stanja dugmeta bez API poziva
-function updateReserveButtonState() {
-  const reserveBtn = document.getElementById('reserve-btn');
-  const paymentResult = document.getElementById('payment-result');
-  
-  if (!reserveBtn) return;
-  
-  const date = document.getElementById('reservation_date')?.value;
-  const arrivalTime = document.getElementById('arrival-time-slot')?.value;
-  const departureTime = document.getElementById('departure-time-slot')?.value;
-  const companyName = document.getElementById('company_name')?.value || '';
-  const email = document.getElementById('email')?.value || '';
-  const registrationInput = document.getElementById('registration-input')?.value || '';
-  
-  // Proveri osnovne validacije
-  if (!date || !arrivalTime || !departureTime) {
-    reserveBtn.disabled = true;
-    if (paymentResult) paymentResult.textContent = '';
-    return;
-  }
-  
-  // Proveri da li je datum u prošlosti
-  if (isDateInPast(date)) {
-    reserveBtn.disabled = true;
-    if (paymentResult) {
-      paymentResult.style.color = "red";
-      paymentResult.textContent = "Greška: Ne možete rezervirati datum u prošlosti.";
-    }
-    return;
-  }
-  
-  // Proveri da li su arrival i departure isti - dozvoljeno samo za posebne termine
-  if (arrivalTime === departureTime && !allowsSameArrivalDeparture(arrivalTime)) {
-    reserveBtn.disabled = true;
-    if (paymentResult) {
-      paymentResult.style.color = "red";
-      paymentResult.textContent = getUserMessage('same_time_not_allowed');
-    }
-    return;
-  }
-  
-  // Validacija email adrese
-  if (email && !isValidEmail(email)) {
-    reserveBtn.disabled = true;
-    if (paymentResult) {
-      paymentResult.style.color = "red";
-      paymentResult.textContent = "Greška: Neispravna email adresa.";
-    }
-    return;
-  }
-  
-  // Validacija registarskih tablica
-  if (registrationInput && !isValidLicensePlate(registrationInput)) {
-    reserveBtn.disabled = true;
-    if (paymentResult) {
-      paymentResult.style.color = "red";
-      paymentResult.textContent = "Greška: Neispravan format registarskih tablica.";
-    }
-    return;
-  }
-  
-  // Validacija naziva kompanije
-  if (companyName && !isValidCompanyName(companyName)) {
-    reserveBtn.disabled = true;
-    if (paymentResult) {
-      paymentResult.style.color = "red";
-      paymentResult.textContent = "Greška: Naziv kompanije mora imati 2-100 karaktera.";
-    }
-    return;
-  }
-  
-  // Ako su sva polja popunjena i validna, omogući dugme
-  if (isFormComplete()) {
-    reserveBtn.disabled = false;
-    if (paymentResult) paymentResult.textContent = '';
-  } else {
-    reserveBtn.disabled = true;
-    if (paymentResult) paymentResult.textContent = '';
-  }
-}
-
-// Debounced verzija checkAndToggleReserveButton funkcije
-function debouncedCheckAndToggleReserveButton() {
-  if (checkButtonDebounceTimer) {
-    clearTimeout(checkButtonDebounceTimer);
-  }
-  checkButtonDebounceTimer = setTimeout(() => {
-    // Proveri da li su sva polja popunjena pre pozivanja API-ja
-    if (isFormComplete()) {
-      checkAndToggleReserveButton();
-    }
-  }, 500); // 500ms debounce delay
-}
 
 async function checkAndToggleReserveButton() {
-  // Sprečavanje simultanih poziva
-  if (isCheckingButton) {
-    return;
-  }
-  
-  isCheckingButton = true;
-  
-  try {
+  console.log('=== checkAndToggleReserveButton POZVAN ===');
   const reserveBtn = document.getElementById('reserve-btn');
   if (reserveBtn) reserveBtn.disabled = false;
   const paymentResult = document.getElementById('payment-result');
   if (paymentResult) paymentResult.textContent = '';
 
+  // PROVERA 1: Da li korisnik već ima aktivnu rezervaciju (PRVI prioritet)
+  console.log('checkAndToggleReserveButton - proveravam session rezervaciju...');
+  if (hasActiveReservation()) {
+    console.log('checkAndToggleReserveButton - PRONAĐENA AKTIVNA REZERVACIJA!');
+    if (reserveBtn) {
+      reserveBtn.disabled = true;
+      reserveBtn.textContent = getUserMessage('active_reservation_in_other_tab');
+    }
+    if (paymentResult) {
+      paymentResult.style.color = "orange";
+      paymentResult.textContent = "⚠️ " + getUserMessage('complete_other_reservation_first');
+    }
+    return;
+  }
+  console.log('checkAndToggleReserveButton - nema aktivne rezervacije, nastavljam...');
+
   const date = document.getElementById('reservation_date')?.value;
   const arrivalTime = document.getElementById('arrival-time-slot')?.value;
   const departureTime = document.getElementById('departure-time-slot')?.value;
-  const companyName = document.getElementById('company_name')?.value;
-  const country = document.getElementById('country')?.value;
-  const registrationInput = document.getElementById('registration-input')?.value;
-  const vehicleTypeId = document.getElementById('vehicle_type_id')?.value;
-  const email = document.getElementById('email')?.value;
 
   if (!date || !arrivalTime || !departureTime) return;
-
-  // PROVERA: Da li je datum u prošlosti
-  if (isDateInPast(date)) {
-    if (paymentResult) {
-      paymentResult.style.color = "red";
-      paymentResult.textContent = "Greška: Ne možete rezervirati datum u prošlosti.";
-    }
-    if (reserveBtn) reserveBtn.disabled = true;
-    return;
-  }
 
   // PROVERA 2: Da li su arrival i departure isti - dozvoljeno samo za posebne termine
   if (arrivalTime === departureTime && !allowsSameArrivalDeparture(arrivalTime)) {
@@ -976,35 +676,64 @@ async function checkAndToggleReserveButton() {
     return;
   }
 
-  // PROVERA: Da li su slotovi dostupni
+  // NOVA LOGIKA: Ako je remaining = 1, rezerviši slot
   if (pickupRemaining === 1 || dropoffRemaining === 1) {
-    // Prikaži upozorenje za kritičan slot
-    if (paymentResult) {
-      paymentResult.style.color = "orange";
-      paymentResult.textContent = "⚠️ " + getUserMessage('critical_slot_warning');
-    }
+    console.log('checkAndToggleReserveButton - KRITIČAN SLOT! remaining pickup:', pickupRemaining, 'dropoff:', dropoffRemaining);
+    console.log('checkAndToggleReserveButton - pozivam handleCriticalSlotReservation...');
+    await handleCriticalSlotReservation(date, pickUpId, dropOffId);
+  } else {
+    console.log('checkAndToggleReserveButton - NIJE KRITIČAN SLOT, remaining pickup:', pickupRemaining, 'dropoff:', dropoffRemaining);
   }
-  } catch (error) {
-    console.error('Greška u checkAndToggleReserveButton:', error);
-  } finally {
-    isCheckingButton = false; // Resetuj flag na kraju
-  }
+  console.log('=== checkAndToggleReserveButton ZAVRŠEN ===');
 }
 
 // Nova funkcija za rukovanje kritičnim slotovima (remaining = 1)
 async function handleCriticalSlotReservation(date, pickUpId, dropOffId) {
+  console.log('=== handleCriticalSlotReservation POZVAN ===');
+  console.log('handleCriticalSlotReservation - parametri:', { date, pickUpId, dropOffId });
   const paymentResult = document.getElementById('payment-result');
   const reserveBtn = document.getElementById('reserve-btn');
   
+  // PROVERA 1: Da li korisnik već ima aktivnu rezervaciju u session-u
+  // PRIVREMENO ISKLJUČENO: PROVERA SESSION REZERVACIJE
+  // if (hasActiveReservation()) {
+  //   const activeReservation = getActiveReservation();
+  //   if (paymentResult) {
+  //     paymentResult.style.color = "orange";
+  //     paymentResult.textContent = "⚠️ " + getUserMessage('active_reservation_exists');
+  //   }
+  //   if (reserveBtn) {
+  //     reserveBtn.disabled = true;
+  //     reserveBtn.textContent = getUserMessage('active_reservation_in_other_tab');
+  //   }
+  //   return;
+  // }
+  
+  // PRIVREMENO ISKLJUČENO: POSTAVLJANJE SESSION REZERVACIJE
+  // console.log('=== handleCriticalSlotReservation - POSTAVLJAM SESSION REZERVACIJU ===');
+  // const sessionReservation = {
+  //   drop_off_time_slot_id: dropOffId,
+  //   pick_up_time_slot_id: pickUpId,
+  //   reservation_date: date,
+  //   user_name: document.getElementById('user_name')?.value || '',
+  //   country: document.getElementById('country')?.value || '',
+  //   license_plate: document.getElementById('license_plate')?.value || '',
+  //   vehicle_type_id: document.getElementById('vehicle_type_id')?.value || '',
+  //   email: document.getElementById('email')?.value || '',
+  //   expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minuta
+  // };
+  // setActiveReservation(sessionReservation);
+  // console.log('=== handleCriticalSlotReservation - SESSION REZERVACIJA POSTAVLJENA ===');
+
   // Pokušaj rezervacije slota
   try {
     const reservationData = {
       drop_off_time_slot_id: dropOffId,
       pick_up_time_slot_id: pickUpId,
       reservation_date: date,
-      user_name: document.getElementById('company_name')?.value || '',
-      country: document.getElementById('country-input')?.value || '',
-      license_plate: document.getElementById('registration-input')?.value || '',
+      user_name: document.getElementById('user_name')?.value || '',
+      country: document.getElementById('country')?.value || '',
+      license_plate: document.getElementById('license_plate')?.value || '',
       vehicle_type_id: document.getElementById('vehicle_type_id')?.value || '',
       email: document.getElementById('email')?.value || ''
     };
@@ -1013,44 +742,22 @@ async function handleCriticalSlotReservation(date, pickUpId, dropOffId) {
     const currentLang = document.documentElement.lang || 
                        (document.getElementById('lang-cg')?.style.opacity === '0.5' ? 'en' : 'mne');
     
-    // Osiguraj CSRF token za rezervaciju slota
-    await ensureCsrfCookie();
-    
-    // Timeout za API poziv (15 sekundi)
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('API timeout')), 15000);
-    });
-    
-    const fetchPromise = fetch('/api/reservations/reserve-slot', {
+    console.log('handleCriticalSlotReservation - šaljem API zahtev:', reservationData);
+    const response = await fetch('/api/reservations/reserve-slot', {
       method: 'POST',
-      headers: addCsrfHeaders({
+      headers: {
         'Content-Type': 'application/json',
         'Accept-Language': currentLang,
-        'Accept': 'application/json'
-      }),
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+      },
       body: JSON.stringify(reservationData)
     });
-    
-    const response = await Promise.race([fetchPromise, timeoutPromise]);
-    
-    // Pročitaj response text samo jednom
-    const responseText = await response.text();
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${responseText}`);
-    }
 
-    // Proveri da li je response JSON
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('handleCriticalSlotReservation - JSON parse greška:', parseError);
-      console.error('handleCriticalSlotReservation - puni response text:', responseText);
-      throw new Error(`Server vraća HTML umesto JSON-a: ${responseText.substring(0, 100)}...`);
-    }
+    const result = await response.json();
+    console.log('handleCriticalSlotReservation - API odgovor:', result);
 
     if (result.success && result.requires_payment) {
+      console.log('handleCriticalSlotReservation - USPEŠNA REZERVACIJA SA PLAĆANJEM!');
       // Slot je rezervisan za 10 minuta
       const reservation = {
         id: result.reservation_id,
@@ -1058,8 +765,12 @@ async function handleCriticalSlotReservation(date, pickUpId, dropOffId) {
         expires_at: result.expires_at
       };
       
-      // Postavi server rezervaciju
+      // Ažuriraj postojeću session rezervaciju sa server podacima
+      console.log('=== handleCriticalSlotReservation - AŽURIRAM SESSION REZERVACIJU ===');
+      console.log('handleCriticalSlotReservation - ažuriram session rezervaciju:', reservation);
+      setActiveReservation(reservation);
       currentSlotReservation = reservation;
+      console.log('handleCriticalSlotReservation - session rezervacija ažurirana, currentSlotReservation:', currentSlotReservation);
 
       if (paymentResult) {
         paymentResult.style.color = "orange";
@@ -1076,6 +787,7 @@ async function handleCriticalSlotReservation(date, pickUpId, dropOffId) {
       }
 
     } else if (result.success && !result.requires_payment) {
+      console.log('handleCriticalSlotReservation - SLOTOVI SU DOSTUPNI, NEMA POTREBE ZA REZERVACIJOM');
       // Ima dovoljno slotova, nema potrebe za rezervacijom
       if (paymentResult) {
         paymentResult.style.color = "green";
@@ -1083,12 +795,14 @@ async function handleCriticalSlotReservation(date, pickUpId, dropOffId) {
       }
 
     } else {
+      console.log('handleCriticalSlotReservation - GREŠKA U REZERVACIJI:', result.message);
       // Greška u rezervaciji
       if (paymentResult) {
         paymentResult.style.color = "red";
         paymentResult.textContent = result.message || getUserMessage('slot_reservation_error');
       }
-
+      // Obriši session rezervaciju u slučaju greške
+      clearActiveReservation();
       currentSlotReservation = null;
       if (reservationTimer) {
         clearInterval(reservationTimer);
@@ -1096,21 +810,22 @@ async function handleCriticalSlotReservation(date, pickUpId, dropOffId) {
       if (reserveBtn) reserveBtn.disabled = true;
     }
 
-      } catch (error) {
-      console.error('handleCriticalSlotReservation - GREŠKA PRI REZERVACIJI SLOTA:', error);
-      if (paymentResult) {
-        paymentResult.style.color = "red";
-        if (error.message.includes('timeout')) {
-          paymentResult.textContent = "Greška: Prekoračen timeout za API poziv. Molimo pokušajte ponovo.";
-        } else {
-          paymentResult.textContent = getUserMessage('server_communication_error');
-        }
-      }
-
-      // Očisti sve timere i cache
-      cleanupAllTimersAndCache();
-      if (reserveBtn) reserveBtn.disabled = true;
+  } catch (error) {
+    console.error('handleCriticalSlotReservation - GREŠKA PRI REZERVACIJI SLOTA:', error);
+    if (paymentResult) {
+      paymentResult.style.color = "red";
+      paymentResult.textContent = getUserMessage('server_communication_error');
     }
+    // Obriši session rezervaciju u slučaju greške
+    console.log('handleCriticalSlotReservation - brišem session zbog greške');
+    clearActiveReservation();
+    currentSlotReservation = null;
+    if (reservationTimer) {
+      clearInterval(reservationTimer);
+    }
+    if (reserveBtn) reserveBtn.disabled = true;
+  }
+  console.log('=== handleCriticalSlotReservation ZAVRŠEN ===');
 }
 
 // Countdown timer za rezervaciju
@@ -1130,6 +845,7 @@ function startReservationCountdown(expiresAt) {
       // Rezervacija je istekla
       clearInterval(reservationTimer);
       currentSlotReservation = null;
+      clearActiveReservation(); // Obriši iz session-a
       
       if (paymentResult) {
         paymentResult.style.color = "red";
@@ -1159,61 +875,51 @@ function startReservationCountdown(expiresAt) {
   }, 1000);
 
   // Proveri status rezervacije periodično
-  const statusCheckInterval = setInterval(async () => {
-    if (!currentSlotReservation) {
-      clearInterval(statusCheckInterval);
-      return;
-    }
+  setInterval(async () => {
+    if (!currentSlotReservation) return;
     
     try {
-      // Timeout za status check API (10 sekundi)
-      const statusTimeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('API timeout')), 10000);
-      });
-      
-      const statusFetchPromise = fetch(`/api/reservations/check-slot-reservation?reservation_id=${currentSlotReservation.id}`)
-        .then(res => res.json());
-      
-      const result = await Promise.race([statusFetchPromise, statusTimeoutPromise]);
+      const response = await fetch(`/api/reservations/check-slot-reservation?reservation_id=${currentSlotReservation.id}`);
+      const result = await response.json();
       
       if (!result.success) {
         // Rezervacija je obrisana ili istekla
         clearInterval(reservationTimer);
-        clearInterval(statusCheckInterval);
         currentSlotReservation = null;
+        clearActiveReservation(); // Obriši iz session-a
         await checkAndToggleReserveButton();
       }
     } catch (error) {
       console.error('Greška pri proveri statusa rezervacije:', error);
-      if (error.message.includes('timeout')) {
-        console.warn('Timeout pri proveri statusa rezervacije - nastavlja se sa proverom');
-      }
     }
   }, 30000); // Proveravaj svakih 30 sekundi
 }
 
-  // --- DOMContentLoaded ---
-  document.addEventListener('DOMContentLoaded', function () {
-    // Osiguraj CSRF token na učitavanju stranice
-    ensureCsrfCookie().catch(error => {
-      console.warn('CSRF token nije mogao biti dobavljen:', error);
-      if (error.message.includes('timeout')) {
-        console.warn('Timeout pri dobavljanju CSRF token-a - pokušaće se ponovo kada bude potreban');
-      }
-    });
-    
-    // Očisti timere kada se korisnik napusti stranicu
-    window.addEventListener('beforeunload', function() {
-      cleanupAllTimersAndCache();
-    });
+// --- DOMContentLoaded ---
+document.addEventListener('DOMContentLoaded', function () {
   setLanguage('en'); // or 'mne' for default
   
-  // Today's date string - koristi globalnu funkciju
-  const todayStr = getTodayString();
-  console.log('DOMContentLoaded - današnji datum (lokalno):', todayStr);
+  // Inicijalizuj session sinhronizaciju
+  setupSessionSync();
+  
+  // Proveri da li već postoji aktivna rezervacija u session-u
+  console.log('DOMContentLoaded - proveravam postojeću rezervaciju...');
+  const existingReservation = getActiveReservation();
+  if (existingReservation) {
+    console.log('DOMContentLoaded - PRONAĐENA POSTOJEĆA REZERVACIJA:', existingReservation);
+    currentSlotReservation = existingReservation;
+    if (existingReservation.expires_at) {
+      startReservationCountdown(existingReservation.expires_at);
+    }
+  } else {
+    console.log('DOMContentLoaded - nema postojeće rezervacije');
+  }
+
+  // Today's date string
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
 
   // Calculate max date (90 days from today)
-  const today = new Date();
   const maxDate = new Date(today);
   maxDate.setDate(today.getDate() + 90);
   const maxDateStr = maxDate.toISOString().slice(0, 10);
@@ -1223,22 +929,8 @@ function startReservationCountdown(expiresAt) {
   if (reservationDateInput) {
     reservationDateInput.min = todayStr;
     reservationDateInput.max = maxDateStr;
-    
-    // FORSIRANO POSTAVLJANJE DANAŠNJEG DATUMA
-    console.log('DOMContentLoaded - postavljam današnji datum:', todayStr);
     reservationDateInput.value = todayStr;
-    
-    // Proveri da li je datum pravilno postavljen
-    setTimeout(() => {
-      if (reservationDateInput.value !== todayStr) {
-        reservationDateInput.value = todayStr;
-        updateReserveButtonState(); // Prvo ažuriraj UI
-        reservationDateInput.dispatchEvent(new Event('change'));
-      } else {
-        updateReserveButtonState(); // Prvo ažuriraj UI
-        reservationDateInput.dispatchEvent(new Event('change'));
-      }
-    }, 100);
+    reservationDateInput.dispatchEvent(new Event('change'));
   }
 
   // Initialize FullCalendar
@@ -1255,7 +947,6 @@ function startReservationCountdown(expiresAt) {
       dateClick: function(info) {
         calendar.select(info.date);
         reservationDateInput.value = info.dateStr;
-        updateReserveButtonState(); // Prvo ažuriraj UI
         reservationDateInput.dispatchEvent(new Event('change'));
         document.getElementById('slot-section').style.display = 'block';
       }
@@ -1264,15 +955,8 @@ function startReservationCountdown(expiresAt) {
   }
 
   // Populate vehicle categories
-  // Timeout za vehicle types API (10 sekundi)
-  const vehicleTimeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error('API timeout')), 10000);
-  });
-  
-  const vehicleFetchPromise = fetch('/api/vehicle-types')
-    .then(res => res.json());
-  
-  Promise.race([vehicleFetchPromise, vehicleTimeoutPromise])
+  fetch('/api/vehicle-types')
+    .then(res => res.json())
     .then(data => {
       const select = document.getElementById('vehicle_type_id');
       if (!select) return;
@@ -1284,16 +968,6 @@ function startReservationCountdown(expiresAt) {
         option.setAttribute('data-price', type.price);
         select.appendChild(option);
       });
-    })
-    .catch(error => {
-      console.error('Greška pri učitavanju tipova vozila:', error);
-      if (error.message.includes('timeout')) {
-        console.warn('Timeout pri učitavanju tipova vozila');
-      }
-      const select = document.getElementById('vehicle_type_id');
-      if (select) {
-        select.innerHTML = '<option id="vehicle-category-option" value="">Greška pri učitavanju tipova vozila</option>';
-      }
     });
 
   // Attach listeners once
@@ -1301,25 +975,22 @@ function startReservationCountdown(expiresAt) {
   const arrivalSelect = document.getElementById('arrival-time-slot');
   const departureSelect = document.getElementById('departure-time-slot');
   if (arrivalSelect) arrivalSelect.addEventListener('change', function() {
+    console.log('arrivalSelect change - pozivam checkAndToggleReserveButton');
     filterTimeSlots();
-    updateReserveButtonState(); // Prvo ažuriraj UI
-    debouncedCheckAndToggleReserveButton(); // Zatim pozovi API sa debounce
+    checkAndToggleReserveButton();
   });
 
   if (departureSelect) departureSelect.addEventListener('change', function() {
+    console.log('departureSelect change - pozivam checkAndToggleReserveButton');
     filterTimeSlots();
-    updateReserveButtonState(); // Prvo ažuriraj UI
-    debouncedCheckAndToggleReserveButton(); // Zatim pozovi API sa debounce
+    checkAndToggleReserveButton();
   });
 
   // On date change, fetch slots and populate selects
   if (reservationDateInput) {
     reservationDateInput.addEventListener('change', function () {
+      console.log('reservationDateInput change - pozivam fetchAvailableSlotsForDate');
       const date = this.value;
-      
-      // Očisti cache kada se promeni datum
-      clearSlotAvailabilityCache();
-      
       fetchAvailableSlotsForDate(date, function(availableSlots) {
         timeSlotMap = {};
         availableSlots.forEach(s => {
@@ -1327,8 +998,8 @@ function startReservationCountdown(expiresAt) {
         });
         const allTimeSlotsForDay = availableSlots.map(s => s.time_slot);
         populateTimeSlotSelect('arrival-time-slot', allTimeSlotsForDay);
-        populateTimeSlotSelect('departure-time-slot', allTimeSlotsForDay);       
-        updateReserveButtonState(); // Prvo ažuriraj UI
+        populateTimeSlotSelect('departure-time-slot', allTimeSlotsForDay);
+        console.log('fetchAvailableSlotsForDate - pozivam checkAndToggleReserveButton nakon učitavanja slotova');
         checkAndToggleReserveButton();  
       });
     });
@@ -1390,16 +1061,12 @@ function startReservationCountdown(expiresAt) {
       const agreement = document.getElementById('user_agreement');
       const privacy = document.getElementById('privacy_agreement');
       const agreementError = document.getElementById('agreement-error');
-      const paymentResult = document.getElementById('payment-result');
-      const reserveBtn = document.getElementById('reserve-btn');
-      
       if (!agreement.checked || !privacy.checked) {
         if (agreementError) agreementError.style.display = 'inline';
         return;
       } else {
         if (agreementError) agreementError.style.display = 'none';
       }
-      
       const data = Object.fromEntries(new FormData(reservationForm).entries());
 
       // Provera da li su arrival i departure isti - dozvoljeno samo za posebne termine
@@ -1411,6 +1078,35 @@ function startReservationCountdown(expiresAt) {
         if (reserveBtn) reserveBtn.disabled = false;
         return;
       }
+
+      // PRIVREMENO ISKLJUČENO: PROVERA SESSION REZERVACIJE
+      // if (hasActiveReservation()) {
+      //   if (paymentResult) {
+      //     paymentResult.style.color = "orange";
+      //     paymentResult.textContent = "⚠️ " + getUserMessage('active_reservation_exists');
+      //   }
+      //   if (reserveBtn) {
+      //     reserveBtn.disabled = true;
+      //     reserveBtn.textContent = getUserMessage('active_reservation_in_other_tab');
+      //   }
+      //   return;
+      // }
+
+      // PRIVREMENO ISKLJUČENO: POSTAVLJANJE SESSION REZERVACIJE
+      // console.log('=== POSTAVLJAM SESSION REZERVACIJU ===');
+      // const sessionReservation = {
+      //   drop_off_time_slot_id: timeSlotMap[data.arrival_time],
+      //   pick_up_time_slot_id: timeSlotMap[data.departure_time],
+      //   reservation_date: data.reservation_date,
+      //   user_name: data.company_name,
+      //   country: data.country,
+      //   license_plate: data.registration_input,
+      //   vehicle_type_id: data.vehicle_type_id,
+      //   email: data.email,
+      //   expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minuta
+      // };
+      // setActiveReservation(sessionReservation);
+      // console.log('=== SESSION REZERVACIJA POSTAVLJENA ===');
       
       // Provera da li je besplatna rezervacija (isti termini za posebne slotove ILI posebna kombinacija)
       const isFreeReservation = (
@@ -1435,46 +1131,32 @@ function startReservationCountdown(expiresAt) {
           status: 'free' // Besplatna rezervacija
         };
 
+        const reserveBtn = document.getElementById('reserve-btn');
+        const paymentResult = document.getElementById('payment-result');
         if (reserveBtn) reserveBtn.disabled = true;
         if (paymentResult) {
           paymentResult.style.color = "black";
           paymentResult.textContent = getUserMessage('creating_free_reservation');
         }
 
-        try {          
-                  // Osiguraj CSRF token za besplatnu rezervaciju
-        await ensureCsrfCookie();
-        
-        // Timeout za free reservation API (15 sekundi)
-        const freeTimeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('API timeout')), 15000);
-        });
-        
-        const currentLang = getCurrentLanguage();
-        const freeFetchPromise = fetch('/api/reservations/reserve', {
-          method: 'POST',
-          headers: addCsrfHeaders({
-            'Content-Type': 'application/json',
-            'Accept-Language': currentLang === 'mne' ? 'mne,sr,en' : 'en'
-          }),
-          body: JSON.stringify(freeReservationData)
-        });
-        
-        const freeRes = await Promise.race([freeFetchPromise, freeTimeoutPromise]);
+        try {
+          
+          const freeRes = await fetch('/api/reservations/reserve', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(freeReservationData)
+          });
 
           if (freeRes.ok) {
-            const responseData = await freeRes.json();
-            
             if (paymentResult) {
               paymentResult.style.color = "green";
-              paymentResult.textContent = responseData.message || getUserMessage('free_reservation_successful');
+              paymentResult.textContent = getUserMessage('free_reservation_successful');
             }
             // Osveži slotove
-                      if (reservationDateInput) {
-            updateReserveButtonState(); // Prvo ažuriraj UI
-            reservationDateInput.dispatchEvent(new Event('change'));
-          }
-            showFreeReservationSuccess(responseData.message); // Show success modal with server message
+            if (reservationDateInput) {
+              reservationDateInput.dispatchEvent(new Event('change'));
+            }
+            showFreeReservationSuccess(); // Show success modal
             
             // Reset form after successful reservation
             setTimeout(() => {
@@ -1491,94 +1173,43 @@ function startReservationCountdown(expiresAt) {
                   paymentResult.textContent = '';
                 }
                 
-                // Očisti sve timere i cache
-                cleanupAllTimersAndCache();
+                // Obriši session rezervaciju nakon uspešne rezervacije
+                clearActiveReservation();
+                currentSlotReservation = null;
+                if (reservationTimer) {
+                  clearInterval(reservationTimer);
+                }
               }
             }, 2000); // Reset after 2 seconds
           } else {
             const errorData = await freeRes.json();
-            
             if (paymentResult) {
               paymentResult.style.color = "red";
               paymentResult.textContent = getUserMessage('free_reservation_error') + (errorData.message || getUserMessage('unknown_error'));
             }
-
-            // Očisti sve timere i cache
-            cleanupAllTimersAndCache();
+            // Obriši session rezervaciju u slučaju greške
+            clearActiveReservation();
+            currentSlotReservation = null;
+            if (reservationTimer) {
+              clearInterval(reservationTimer);
+            }
           }
         } catch (err) {
           if (paymentResult) {
             paymentResult.style.color = "red";
-            if (err.message.includes('timeout')) {
-              paymentResult.textContent = "Greška: Prekoračen timeout za API poziv. Molimo pokušajte ponovo.";
-            } else {
-              paymentResult.textContent = getUserMessage('free_reservation_error') + err.message;
-            }
+            paymentResult.textContent = getUserMessage('free_reservation_error') + err.message;
           }
-          // Očisti sve timere i cache
-          cleanupAllTimersAndCache();
+          // Obriši session rezervaciju u slučaju greške
+          clearActiveReservation();
+          currentSlotReservation = null;
+          if (reservationTimer) {
+            clearInterval(reservationTimer);
+          }
         }
         
         if (reserveBtn) reserveBtn.disabled = false;
         return; // Prekini izvršavanje - ne ide na plaćanje
       }
-
-      // PROVERA KRITIČNOG SLOTA: Ako je remaining = 1, rezerviši slot pre temp reservation
-      const pickUpId = timeSlotMap[data.departure_time];
-      const dropOffId = timeSlotMap[data.arrival_time];
-      
-      if (pickUpId && dropOffId) {
-        const [pickupData, dropoffData] = await Promise.all([
-          checkSlotAvailability(data.reservation_date, pickUpId, 'pick_up'),
-          checkSlotAvailability(data.reservation_date, dropOffId, 'drop_off')
-        ]);
-        
-        const pickupRemaining = pickupData?.remaining || 0;
-        const dropoffRemaining = dropoffData?.remaining || 0;
-        
-        // PROVERA KRITIČNOG SLOTA (remaining = 1)
-        if (pickupRemaining === 1 || dropoffRemaining === 1) {
-          try {
-            await handleCriticalSlotReservation(data.reservation_date, pickUpId, dropOffId);
-          } catch (error) {
-            console.error('Form submit - greška pri handleCriticalSlotReservation:', error);
-            if (paymentResult) {
-              paymentResult.style.color = "red";
-              paymentResult.textContent = getUserMessage('critical_slot_reservation_error');
-            }
-            if (reserveBtn) reserveBtn.disabled = false;
-            return;
-          }
-        }
-        
-        // FINALNA PROVERA DOSTUPNOSTI PRE PLAĆANJA
-        if (pickupRemaining === 0 || dropoffRemaining === 0) {
-          if (paymentResult) {
-            paymentResult.style.color = "red";
-            paymentResult.textContent = getUserMessage('slots_unavailable_payment');
-          }
-          if (reserveBtn) reserveBtn.disabled = false;
-          return;
-        }
-        
-        // DODATNA PROVERA RACE CONDITION-A
-        const hasRaceCondition = await checkForRaceCondition(data.reservation_date, pickUpId, dropOffId);
-        if (hasRaceCondition) {
-          if (paymentResult) {
-            paymentResult.style.color = "red";
-            paymentResult.textContent = "⚠️ Race condition detected - slots became unavailable. Please try again.";
-          }
-          if (reserveBtn) reserveBtn.disabled = false;
-          return;
-        }
-        
-        console.log('Finalna provera dostupnosti - slotovi su slobodni:', {
-          pickup: { id: pickUpId, remaining: pickupRemaining },
-          dropoff: { id: dropOffId, remaining: dropoffRemaining }
-        });
-      }
-
-
 
       // Prepare payload
       const tempPayload = {
@@ -1592,6 +1223,8 @@ function startReservationCountdown(expiresAt) {
         email: data.email,
       };
 
+      const reserveBtn = document.getElementById('reserve-btn');
+      const paymentResult = document.getElementById('payment-result');
       if (reserveBtn) reserveBtn.disabled = true;
       if (paymentResult) {
         paymentResult.style.color = "black";
@@ -1609,24 +1242,21 @@ function startReservationCountdown(expiresAt) {
       } else {
         // Kreira novi temp_data zapis
         try {
-        // CSRF: Osiguraj CSRF token
+        // CSRF: Pozovi samo ako nema kolaÄiÄ‡a
         await ensureCsrfCookie();
+        xsrf = getCookie('XSRF-TOKEN');
+        if (!xsrf) throw new Error('CSRF token nije pronađen! Očistite kolačiće i pokušajte ponovo.');
 
-        // Timeout za temp reservation API (15 sekundi)
-        const tempTimeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('API timeout')), 15000);
-        });
-        
-        const tempFetchPromise = fetch('/api/temp-reservation', {
+        const tempRes = await fetch('/api/temp-reservation', {
           method: 'POST',
-          headers: addCsrfHeaders({ 
+          credentials: 'include',
+          headers: { 
             'Content-Type': 'application/json', 
-            'Accept': 'application/json'
-          }),
+            'Accept': 'application/json',
+            'X-XSRF-TOKEN': decodeURIComponent(xsrf)
+          },
           body: JSON.stringify(tempPayload)
         });
-        
-        const tempRes = await Promise.race([tempFetchPromise, tempTimeoutPromise]);
 
         if (!tempRes.ok) {
           const msg = await tempRes.text();
@@ -1641,6 +1271,8 @@ function startReservationCountdown(expiresAt) {
             paymentResult.style.color = "red";
             paymentResult.textContent = getUserMessage('temp_data_save_failed');
           }
+          // Obriši session rezervaciju u slučaju greške
+          clearActiveReservation();
           currentSlotReservation = null;
           if (reservationTimer) {
             clearInterval(reservationTimer);
@@ -1652,14 +1284,14 @@ function startReservationCountdown(expiresAt) {
         } catch (err) {
           if (paymentResult) {
             paymentResult.style.color = "red";
-            if (err.message.includes('timeout')) {
-              paymentResult.textContent = "Greška: Prekoračen timeout za API poziv. Molimo pokušajte ponovo.";
-            } else {
-              paymentResult.textContent = getUserMessage('temp_data_error') + err.message;
-            }
+            paymentResult.textContent = getUserMessage('temp_data_error') + err.message;
           }
-          // Očisti sve timere i cache
-          cleanupAllTimersAndCache();
+          // Obriši session rezervaciju u slučaju greške
+          clearActiveReservation();
+          currentSlotReservation = null;
+          if (reservationTimer) {
+            clearInterval(reservationTimer);
+          }
           if (reserveBtn) reserveBtn.disabled = false;
           return;
         }
@@ -1667,31 +1299,25 @@ function startReservationCountdown(expiresAt) {
 
       console.log('Pripremam fetch za /procesiraj-placanje', merchantTransactionId);
       console.log('merchantTransactionId:', merchantTransactionId);
+      console.log('_token:', decodeURIComponent(xsrf));
 
       try {
         // Umesto FormData koristi JSON payload za /procesiraj-placanje
         const payload = {
-          merchantTransactionId: merchantTransactionId
+          merchantTransactionId: merchantTransactionId,
+          _token: decodeURIComponent(xsrf)
         };
 
-        // Osiguraj CSRF token za plaćanje
-        await ensureCsrfCookie();
-        
-        // Timeout za payment API (20 sekundi)
-        const payTimeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('API timeout')), 20000);
-        });
-        
-        const payFetchPromise = fetch('/api/procesiraj-placanje', {
+        const payRes = await fetch('/api/procesiraj-placanje', {
           method: 'POST',
-          headers: addCsrfHeaders({
+          credentials: 'include',
+          headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }),
+            'Accept': 'application/json',
+            'X-XSRF-TOKEN': decodeURIComponent(xsrf)
+          },
           body: JSON.stringify(payload)
         });
-        
-        const payRes = await Promise.race([payFetchPromise, payTimeoutPromise]);
 
         console.log('Završio fetch za /procesiraj-placanje');
 
@@ -1709,6 +1335,8 @@ function startReservationCountdown(expiresAt) {
             paymentResult.style.color = "red";
             paymentResult.textContent = Object.values(payResp.errors).flat().join(' ');
           }
+          // Obriši session rezervaciju u slučaju greške
+          clearActiveReservation();
           currentSlotReservation = null;
           if (reservationTimer) {
             clearInterval(reservationTimer);
@@ -1722,10 +1350,11 @@ function startReservationCountdown(expiresAt) {
           }
 
           if (reservationDateInput) {
-            updateReserveButtonState(); // Prvo ažuriraj UI
             reservationDateInput.dispatchEvent(new Event('change'));
           }
-
+          
+          // Obriši session rezervaciju nakon uspešne rezervacije
+          clearActiveReservation();
           currentSlotReservation = null;
           if (reservationTimer) {
             clearInterval(reservationTimer);
@@ -1735,6 +1364,8 @@ function startReservationCountdown(expiresAt) {
             paymentResult.style.color = "red";
             paymentResult.textContent = payResp.message || getUserMessage('payment_initialization_error');
           }
+          // Obriši session rezervaciju u slučaju greške
+          clearActiveReservation();
           currentSlotReservation = null;
           if (reservationTimer) {
             clearInterval(reservationTimer);
@@ -1743,21 +1374,21 @@ function startReservationCountdown(expiresAt) {
       } catch (err) {
         if (paymentResult) {
           paymentResult.style.color = "red";
-          if (err.message.includes('timeout')) {
-            paymentResult.textContent = "Greška: Prekoračen timeout za API poziv. Molimo pokušajte ponovo.";
-          } else {
-            paymentResult.textContent = getUserMessage('payment_sending_error') + err.message;
-          }
+          paymentResult.textContent = getUserMessage('payment_sending_error') + err.message;
         }
-        // Očisti sve timere i cache
-        cleanupAllTimersAndCache();
+        // Obriši session rezervaciju u slučaju greške
+        clearActiveReservation();
+        currentSlotReservation = null;
+        if (reservationTimer) {
+          clearInterval(reservationTimer);
+        }
       }
       if (reserveBtn) reserveBtn.disabled = false;
     });
 
     // Initial fetch for default date
     if (reservationDateInput) {
-      updateReserveButtonState(); // Prvo ažuriraj UI
+      console.log('DOMContentLoaded - pozivam initial fetch za default datum');
       reservationDateInput.dispatchEvent(new Event('change'));
     }
 
@@ -1766,68 +1397,7 @@ function startReservationCountdown(expiresAt) {
     if (registrationInput) {
       registrationInput.addEventListener('input', function() {
         this.value = this.value.toUpperCase();
-        // Ne pozivaj API dok se kuca - samo ažuriraj UI
-        updateReserveButtonState();
-      });
-    }
-
-    // Event listener-i za polja forme - pozivaju debouncedCheckAndToggleReserveButton kada se popune
-    const companyNameInput = document.getElementById('company_name');
-    if (companyNameInput) {
-      companyNameInput.addEventListener('input', function() {
-        // Ne pozivaj API dok se kuca - samo ažuriraj UI
-        updateReserveButtonState();
-      });
-    }
-
-    const countryInput = document.getElementById('country-input');
-    if (countryInput) {
-      countryInput.addEventListener('change', function() {
-        // Ne pozivaj API dok se kuca - samo ažuriraj UI
-        updateReserveButtonState();
-      });
-    }
-
-    const vehicleTypeInput = document.getElementById('vehicle_type_id');
-    if (vehicleTypeInput) {
-      vehicleTypeInput.addEventListener('change', function() {
-        // Ne pozivaj API dok se kuca - samo ažuriraj UI
-        updateReserveButtonState();
-      });
-    }
-
-    const emailInput = document.getElementById('email');
-    if (emailInput) {
-      emailInput.addEventListener('input', function() {
-        // Ne pozivaj API dok se kuca - samo ažuriraj UI
-        updateReserveButtonState();
       });
     }
   }
 });
-
-// Funkcija za proveru da li je došlo do race condition-a
-function checkForRaceCondition(date, pickUpId, dropOffId) {
-  // Proveri da li su slotovi još uvek dostupni pre plaćanja
-  return Promise.all([
-    checkSlotAvailability(date, pickUpId, 'pick_up'),
-    checkSlotAvailability(date, dropOffId, 'drop_off')
-  ]).then(([pickupData, dropoffData]) => {
-    const pickupRemaining = pickupData?.remaining || 0;
-    const dropoffRemaining = dropoffData?.remaining || 0;
-    
-    // Ako su slotovi popunjeni, to je race condition
-    if (pickupRemaining === 0 || dropoffRemaining === 0) {
-      console.warn('Race condition detected - slots became unavailable during payment process', {
-        pickup: { id: pickUpId, remaining: pickupRemaining },
-        dropoff: { id: dropOffId, remaining: dropoffRemaining }
-      });
-      return true;
-    }
-    
-    return false;
-  }).catch(error => {
-    console.error('Error checking for race condition:', error);
-    return false; // Ako ne možemo da proverimo, pretpostavimo da nema race condition-a
-  });
-}
