@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kotorbus – Readonly Admin Login</title>
+  <link rel="stylesheet" href="src/style.css">
+  <style>
+    .readonly-login-container {
+      margin: 60px auto 0 auto;
+      max-width: 400px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 14px #e3e6f3;
+      padding: 40px 32px 30px 32px;
+      display: flex;
+      flex: 1 0 auto;
+      flex-direction: column;
+      align-items: center;
+    }
+    .readonly-login-container h2 {
+      margin-top: 0;
+      font-size: 1.35em;
+      color: #9e1321;
+    }
+    .readonly-login-container input[type="password"] {
+      margin-bottom: 18px;
+    }
+    .readonly-login-container input[type="text"],
+    .readonly-login-container input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+      border-radius: 7px;
+      border: 1px solid #c9d6e4;
+      font-size: 1em;
+      background: #f9fafc;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .readonly-login-container button {
+      width: 100%;
+      padding: 11px 0;
+      background: #9e1321;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.09em;
+      cursor: pointer;
+      transition: background 0.18s;
+      margin-top: 8px;
+    }
+    .readonly-login-container button:hover {
+      background: #9e1321;
+    }
+    .readonly-login-container .error {
+      color: #9e1321;
+      background: #fbeee9;
+      border: 1px solid #f5bfb6;
+      border-radius: 4px;
+      padding: 7px 12px;
+      margin-bottom: 16px;
+      width: 100%;
+      text-align: center;
+      display: none;
+    }
+    @media (max-width: 500px) {
+      .readonly-login-container { padding: 18px 5vw; }
+    }
+  </style>
+  <script>
+    // Ako već postoji readonly_token, preusmjeri na control.html
+    if (localStorage.getItem('readonly_token')) {
+      window.location.href = 'control.html';
+    }
+  </script>
+</head>
+<body>
+  <header style="display: flex; align-items: center; justify-content: space-between;">
+    <div style="flex:1;"></div>
+    <img src="src/logo.png" alt="Kotorbus Logo" style="display:block; margin:auto;">
+    <div style="flex:1; display:flex; justify-content: flex-end; gap:10px; align-items:center;">
+      <img src="src/gb.png" alt="English" id="lang-en" style="width:32px; height:32px; cursor:pointer;">
+      <img src="src/mne.png" alt="Crnogorski" id="lang-cg" style="width:32px; height:32px; cursor:pointer;">
+    </div>
+  </header>
+
+  <div class="readonly-login-container">
+    <h2>Readonly admin – Prijava</h2>
+    <div id="login-error" class="error"></div>
+    <form id="readonly-login-form" autocomplete="off">
+      <input type="text" id="readonly-username" name="readonly-username" placeholder="Korisničko ime" required autofocus>
+      <input type="password" id="readonly-password" name="readonly-password" placeholder="Lozinka" required>
+      <button type="submit">Prijavi se</button>
+    </form>
+  </div>
+  
+  <footer>
+    <img src="src/logoop.png" alt="OpKotor" style="height:80px;">
+    <p>Bidonkaktus 🌵 &copy; 2025 Kotorbus</p>
+  </footer>
+  <script>
+  document.getElementById('readonly-login-form').onsubmit = async function(e) {
+    e.preventDefault();
+    const username = document.getElementById('readonly-username').value.trim();
+    const password = document.getElementById('readonly-password').value;
+    const errorDiv = document.getElementById('login-error');
+    errorDiv.style.display = 'none';
+
+    console.log('Attempting login with username:', username);
+    console.log('Password length:', password.length);
+
+    try {
+      const res = await fetch('/api/readonly-admin/login', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      console.log('Response status:', res.status);
+      console.log('Response headers:', res.headers);
+
+    const contentType = res.headers.get('content-type') || '';
+    let data;
+    if (contentType.includes('application/json')) {
+      data = await res.json();
+    } else {
+      // Može biti HTML error page
+      const text = await res.text();
+      errorDiv.textContent = 'Server error: ' + text;
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    if (data.token) {
+      localStorage.setItem('readonly_token', data.token);
+      window.location.href = 'control.html';
+    } else {
+      errorDiv.textContent = data.message || 'Neispravni podaci!';
+      errorDiv.style.display = 'block';
+    }
+    } catch (error) {
+      console.error('Login error:', error);
+      errorDiv.textContent = 'Greška pri prijavi: ' + error.message;
+      errorDiv.style.display = 'block';
+    }
+  };
+  </script>
+</body>
+</html>

@@ -25,7 +25,7 @@
                 {{-- Prikaz tipa vozila (ako koristiš relaciju, zamijeni sa $reservation->vehicleType->name) --}}
                 <td>{{ $reservation->vehicle_type ?? $reservation->vehicle_type_id }}</td>
                 <td>{{ $reservation->license_plate }}</td>
-                {{-- Prikaz slot vremena (ako koristiš relaciju, zamijeni sa $reservation->timeslot->start_time) --}}
+                {{-- Prikaz slot vremena (ako koristiš relaciju, zamjeni sa $reservation->timeslot->start_time) --}}
                 <td>{{ $reservation->slot_time ?? $reservation->time_slot_id }}</td>
                 <td>{{ $reservation->slot_type ?? $reservation->type }}</td>
                 @unless(auth()->user()->hasRole('admin_readonly'))

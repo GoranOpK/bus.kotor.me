@@ -6,233 +6,423 @@ use App\Models\Reservation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Mail\VehicleTypeReportMail;
-use App\Mail\FinancialReportMail;
+
+// Importujemo posebne mail klase za sve izvještaje
+use App\Mail\DailyVehicleReservationReportMail;
+use App\Mail\MonthlyVehicleReservationReportMail;
+use App\Mail\YearlyVehicleReservationReportMail;
+use App\Mail\DailyFinanceReportMail;
+use App\Mail\MonthlyFinanceReportMail;
+use App\Mail\YearlyFinanceReportMail;
 
 class ReportService
 {
-    // Adrese na koje šaljemo izvještaje
-    protected $emails = [
-        'vladimir.jokic@kotor.me',
-        'prihodi@kotor.me',
-        'mirjana.grbovic@kotor.me',
-    ];
+    // Dohvata email adrese iz tabele report_emails
+    protected function getReportEmails()
+    {
+        return \DB::table('report_emails')->pluck('email')->toArray();
+    }
 
     // ===========================
     // PODACI ZA IZVJEŠTAJE
     // ===========================
 
-    /**
-     * Dnevni izvještaj: broj rezervacija po tipu vozila za određeni dan.
-     *
-     * @param  string $date  Datum (npr. '2025-05-31')
-     * @return \Illuminate\Support\Collection
-     */
+    // Dnevni izvještaj: broj rezervacija po tipu vozila za određeni dan
     public function dailyVehicleReservationsByType($date)
     {
-        return Reservation::whereDate('reservation_date', $date)
+        return DB::table('reservations')
             ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
-            ->select('vehicle_types.name as tip_vozila', DB::raw('COUNT(*) as broj_rezervacija'))
-            ->groupBy('vehicle_types.name')
+            ->select('vehicle_types.id as vehicle_type_id', 'vehicle_types.description_vehicle as tip_vozila', DB::raw('COUNT(*) as broj_rezervacija'))
+            ->whereDate('reservation_date', $date)
+            ->groupBy('vehicle_types.id', 'vehicle_types.description_vehicle')
             ->get();
     }
 
-    /**
-     * Mjesečni izvještaj: broj rezervacija po tipu vozila za određeni mjesec i godinu.
-     */
+    // Mjesečni izvještaj: broj rezervacija po tipu vozila za određeni mjesec i godinu
     public function monthlyVehicleReservationsByType($month, $year)
     {
-        return Reservation::whereYear('reservation_date', $year)
-            ->whereMonth('reservation_date', $month)
+        $month = (int)$month; // Osiguraj integer!
+        return DB::table('reservations')
             ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
-            ->select('vehicle_types.name as tip_vozila', DB::raw('COUNT(*) as broj_rezervacija'))
-            ->groupBy('vehicle_types.name')
+            ->select('vehicle_types.id as vehicle_type_id', 'vehicle_types.description_vehicle as tip_vozila', DB::raw('COUNT(*) as broj_rezervacija'))
+            ->whereYear('reservation_date', $year)
+            ->whereMonth('reservation_date', $month)
+            ->groupBy('vehicle_types.id', 'vehicle_types.description_vehicle')
             ->get();
     }
 
-    /**
-     * Godišnji izvještaj: broj rezervacija po tipu vozila za određenu godinu.
-     */
+    // Godišnji izvještaj: broj rezervacija po tipu vozila za određenu godinu
     public function yearlyVehicleReservationsByType($year)
     {
-        return Reservation::whereYear('reservation_date', $year)
+        return DB::table('reservations')
             ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
-            ->select('vehicle_types.name as tip_vozila', DB::raw('COUNT(*) as broj_rezervacija'))
-            ->groupBy('vehicle_types.name')
+            ->select('vehicle_types.id as vehicle_type_id', 'vehicle_types.description_vehicle as tip_vozila', DB::raw('COUNT(*) as broj_rezervacija'))
+            ->whereYear('reservation_date', $year)
+            ->groupBy('vehicle_types.id', 'vehicle_types.description_vehicle')
             ->get();
     }
 
-    /**
-     * Finansijski izvještaj - zbir prihoda po danu, mjesecu, godini.
-     */
+    // Dnevni finansijski izvještaj - zbir prihoda za određeni dan (fiksna cijena po tipu vozila)
     public function dailyFinancialReport($date)
     {
-        return Reservation::whereDate('reservation_date', $date)
-            ->sum('total_price');
+        return DB::table('reservations')
+            ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+            ->whereDate('reservation_date', $date)
+            ->where('reservations.status', 'paid')
+            ->sum('vehicle_types.price');
     }
 
+    // Mjesečni finansijski izvještaj - zbir prihoda za određeni mjesec i godinu (fiksna cijena po tipu vozila)
     public function monthlyFinancialReport($month, $year)
     {
-        return Reservation::whereYear('reservation_date', $year)
+        $month = (int)$month;
+        return DB::table('reservations')
+            ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+            ->whereYear('reservation_date', $year)
             ->whereMonth('reservation_date', $month)
-            ->sum('total_price');
+            ->where('reservations.status', 'paid')
+            ->sum('vehicle_types.price');
     }
 
+    // Godišnji finansijski izvještaj - zbir prihoda za određenu godinu (fiksna cijena po tipu vozila)
     public function yearlyFinancialReport($year)
     {
-        return Reservation::whereYear('reservation_date', $year)
-            ->sum('total_price');
+        return DB::table('reservations')
+            ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+            ->whereYear('reservation_date', $year)
+            ->where('reservations.status', 'paid')
+            ->sum('vehicle_types.price');
     }
 
-    // ===========================
-    // SLANJE IZVJEŠTAJA
-    // ===========================
-
     /**
-     * Šalje izvještaj o rezervacijama po tipu vozila za zadani period na više adresa.
-     * $periodType: 'daily', 'monthly', 'yearly'
-     * $params: ['date' => ..., 'month' => ..., 'year' => ...]
+     * Zbir po mjesecima za finansijski godišnji izvještaj.
+     * Vraća array: [1 => zbir_za_januar, 2 => zbir_za_februar, ... 12 => zbir_za_decembar]
      */
-    public function sendVehicleTypeReport($periodType, $params)
+    public function yearlyFinancePerMonth($year)
     {
-        switch ($periodType) {
-            case 'daily':
-                $data = $this->dailyVehicleReservationsByType($params['date']);
-                $periodLabel = 'Dnevni izvještaj';
-                $view = 'reports.vehicle_type_daily';
-                $periodString = $params['date'];
-                break;
-            case 'monthly':
-                $data = $this->monthlyVehicleReservationsByType($params['month'], $params['year']);
-                $periodLabel = 'Mjesečni izvještaj';
-                $view = 'reports.vehicle_type_monthly';
-                $periodString = "{$params['month']}.{$params['year']}";
-                break;
-            case 'yearly':
-                $data = $this->yearlyVehicleReservationsByType($params['year']);
-                $periodLabel = 'Godišnji izvještaj';
-                $view = 'reports.vehicle_type_yearly';
-                $periodString = (string)$params['year'];
-                break;
-            default:
-                throw new \InvalidArgumentException('Nepoznat period');
+        $results = DB::table('reservations')
+            ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+            ->selectRaw('MONTH(reservation_date) as mjesec, SUM(vehicle_types.price) as prihod')
+            ->whereYear('reservation_date', $year)
+            ->where('reservations.status', 'paid')
+            ->groupBy('mjesec')
+            ->orderBy('mjesec')
+            ->get();
+
+        // Formiraj kolekciju za svih 12 mjeseci
+        $collection = collect();
+        for ($i = 1; $i <= 12; $i++) {
+            $row = $results->firstWhere('mjesec', $i);
+            $collection->push([
+                'mjesec' => $i,
+                'prihod' => $row ? (float)$row->prihod : 0
+            ]);
         }
-
-        $pdf = Pdf::loadView($view, [
-            'podaci' => $data,
-            'period' => $periodLabel,
-            'periodString' => $periodString,
-        ]);
-
-        // Slanje na više adresa
-        Mail::to($this->emails)
-            ->send(new VehicleTypeReportMail($pdf, $periodLabel, $periodString));
+        return $collection;
     }
 
-    /**
-     * Šalje finansijski izvještaj za zadani period na više adresa.
-     * $periodType: 'daily', 'monthly', 'yearly'
-     * $params: ['date' => ..., 'month' => ..., 'year' => ...]
-     */
-    public function sendFinancialReport($periodType, $params)
+    // ===========================
+    // FREE & PAID STATISTIKA
+    // ===========================
+
+    // Dnevna statistika: paid/free count & suma
+    public function dailyReservationStats($date)
     {
-        switch ($periodType) {
-            case 'daily':
-                $total = $this->dailyFinancialReport($params['date']);
-                $periodLabel = 'Dnevni finansijski izvještaj';
-                $view = 'reports.financial_daily';
-                $periodString = $params['date'];
-                break;
-            case 'monthly':
-                $total = $this->monthlyFinancialReport($params['month'], $params['year']);
-                $periodLabel = 'Mjesečni finansijski izvještaj';
-                $view = 'reports.financial_monthly';
-                $periodString = "{$params['month']}.{$params['year']}";
-                break;
-            case 'yearly':
-                $total = $this->yearlyFinancialReport($params['year']);
-                $periodLabel = 'Godišnji finansijski izvještaj';
-                $view = 'reports.financial_yearly';
-                $periodString = (string)$params['year'];
-                break;
-            default:
-                throw new \InvalidArgumentException('Nepoznat period');
-        }
+        $paidCount = DB::table('reservations')
+            ->whereDate('reservation_date', $date)
+            ->where('status', 'paid')
+            ->count();
 
-        $pdf = Pdf::loadView($view, [
-            'total' => $total,
-            'period' => $periodLabel,
-            'periodString' => $periodString,
-        ]);
+        $paidTotal = DB::table('reservations')
+            ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+            ->whereDate('reservation_date', $date)
+            ->where('reservations.status', 'paid')
+            ->sum('vehicle_types.price');
 
-        Mail::to($this->emails)
-            ->send(new FinancialReportMail($pdf, $periodLabel, $periodString, $total));
+        $freeCount = DB::table('reservations')
+            ->whereDate('reservation_date', $date)
+            ->where('status', 'free')
+            ->count();
+
+        return [
+            'paid_count' => $paidCount,
+            'paid_total' => $paidTotal,
+            'free_count' => $freeCount,
+        ];
+    }
+
+    // Mjesečna statistika: paid/free count & suma
+    public function monthlyReservationStats($month, $year)
+    {
+        $paidCount = DB::table('reservations')
+            ->whereYear('reservation_date', $year)
+            ->whereMonth('reservation_date', $month)
+            ->where('status', 'paid')
+            ->count();
+
+        $paidTotal = DB::table('reservations')
+            ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+            ->whereYear('reservation_date', $year)
+            ->whereMonth('reservation_date', $month)
+            ->where('reservations.status', 'paid')
+            ->sum('vehicle_types.price');
+
+        $freeCount = DB::table('reservations')
+            ->whereYear('reservation_date', $year)
+            ->whereMonth('reservation_date', $month)
+            ->where('status', 'free')
+            ->count();
+
+        return [
+            'paid_count' => $paidCount,
+            'paid_total' => $paidTotal,
+            'free_count' => $freeCount,
+        ];
+    }
+
+    // Godišnja statistika: paid/free count & suma
+    public function yearlyReservationStats($year)
+    {
+        $paidCount = DB::table('reservations')
+            ->whereYear('reservation_date', $year)
+            ->where('status', 'paid')
+            ->count();
+
+        $paidTotal = DB::table('reservations')
+            ->join('vehicle_types', 'reservations.vehicle_type_id', '=', 'vehicle_types.id')
+            ->whereYear('reservation_date', $year)
+            ->where('reservations.status', 'paid')
+            ->sum('vehicle_types.price');
+
+        $freeCount = DB::table('reservations')
+            ->whereYear('reservation_date', $year)
+            ->where('status', 'free')
+            ->count();
+
+        return [
+            'paid_count' => $paidCount,
+            'paid_total' => $paidTotal,
+            'free_count' => $freeCount,
+        ];
     }
 
     // ===========================
-    // DOWNLOAD (opciono)
+    // SLANJE IZVJEŠTAJA PO TIPU VOZILA
     // ===========================
 
-    /**
-     * Vrati PDF izvještaj za preuzimanje (za admin panel).
-     */
+    public function sendDailyVehicleTypeReport($date)
+    {
+        $data = $this->dailyVehicleReservationsByType($date);
+        Mail::to($this->getReportEmails())
+            ->send(new DailyVehicleReservationReportMail($data, $date));
+    }
+
+    public function sendMonthlyVehicleTypeReport($month, $year)
+    {
+        $month = (int)$month;
+        $data = $this->monthlyVehicleReservationsByType($month, $year);
+        Mail::to($this->getReportEmails())
+            ->send(new MonthlyVehicleReservationReportMail($month, $year, $data));
+    }
+
+    public function sendYearlyVehicleTypeReport($year)
+    {
+        $data = $this->yearlyVehicleReservationsByType($year);
+        Mail::to($this->getReportEmails())
+            ->send(new YearlyVehicleReservationReportMail($year, $data));
+    }
+
+    // ===========================
+    // SLANJE FINANSIJSKIH IZVJEŠTAJA
+    // ===========================
+
+    // Slanje dnevnog finansijskog izvještaja sa paid/free statistikama
+    public function sendDailyFinancialReport($date)
+    {
+        $stats = $this->dailyReservationStats($date);
+        Mail::to($this->getReportEmails())
+            ->send(new DailyFinanceReportMail(
+                $date,
+                $stats['paid_total'],
+                $stats['paid_count'],
+                $stats['free_count'],
+                'Dnevni finansijski izvještaj - Kotor Bus'
+            ));
+    }
+
+    // Slanje mjesečnog finansijskog izvještaja sa paid/free statistikama
+    public function sendMonthlyFinancialReport($month, $year)
+    {
+        $month = (int)$month;
+        $stats = $this->monthlyReservationStats($month, $year);
+        Mail::to($this->getReportEmails())
+            ->send(new MonthlyFinanceReportMail(
+                $month,
+                $year,
+                $stats['paid_total'],
+                $stats['paid_count'],
+                $stats['free_count'],
+                'Mjesečni finansijski izvještaj - Kotor Bus'
+            ));
+    }
+
+    // Slanje godišnjeg finansijskog izvještaja sa paid/free statistikama
+    public function sendYearlyFinancialReport($year)
+    {
+        $stats = $this->yearlyReservationStats($year);
+        $financeData = $this->yearlyFinancePerMonth($year);
+        Mail::to($this->getReportEmails())
+            ->send(new YearlyFinanceReportMail(
+                $year,
+                $financeData,
+                $stats['paid_total'],
+                $stats['paid_count'],
+                $stats['free_count'],
+                'Godišnji finansijski izvještaj - Kotor Bus'
+            ));
+    }
+
+    // ===========================
+    // DOWNLOAD IZVJEŠTAJA (opciono)
+    // ===========================
+
     public function downloadVehicleTypeReport($periodType, $params)
     {
         switch ($periodType) {
             case 'daily':
                 $data = $this->dailyVehicleReservationsByType($params['date']);
                 $view = 'reports.vehicle_type_daily';
-                $periodString = $params['date'];
+                $variables = [
+                    'reservationsByType' => $data,
+                    'date' => $params['date']
+                ];
+                $filename = 'izvjestaj_po_tipovima_vozila_'.$params['date'].'.pdf';
                 break;
             case 'monthly':
-                $data = $this->monthlyVehicleReservationsByType($params['month'], $params['year']);
+                $month = (int)$params['month'];
+                $data = $this->monthlyVehicleReservationsByType($month, $params['year']);
                 $view = 'reports.vehicle_type_monthly';
-                $periodString = "{$params['month']}.{$params['year']}";
+                $variables = [
+                    'reservationsByType' => $data,
+                    'month' => $month,
+                    'year' => $params['year']
+                ];
+                $filename = 'izvjestaj_po_tipovima_vozila_'.$month.'_'.$params['year'].'.pdf';
                 break;
             case 'yearly':
                 $data = $this->yearlyVehicleReservationsByType($params['year']);
                 $view = 'reports.vehicle_type_yearly';
-                $periodString = (string)$params['year'];
+                $variables = [
+                    'reservationsByType' => $data,
+                    'year' => $params['year']
+                ];
+                $filename = 'izvjestaj_po_tipovima_vozila_'.$params['year'].'.pdf';
                 break;
             default:
                 throw new \InvalidArgumentException('Nepoznat period');
         }
 
-        $pdf = Pdf::loadView($view, [
-            'podaci' => $data,
-            'periodString' => $periodString,
+        $pdf = Pdf::loadView($view, $variables)->setPaper('a4', 'portrait')->setOptions([
+            'defaultFont' => 'DejaVu Sans',
+            'isRemoteEnabled' => false,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => false,
+            'isJavascriptEnabled' => false,
+            'defaultMediaType' => 'screen',
+            'isFontSubsettingEnabled' => false,
+            'dpi' => 96,
+            'fontHeightRatio' => 1.1,
+            'defaultEncoding' => 'UTF-8',
         ]);
-
-        return $pdf->download('izvjestaj_po_tipovima_vozila_'.$periodString.'.pdf');
+        return $pdf->download($filename);
     }
 
+    // Vrati PDF finansijski izvještaj za preuzimanje (za admin panel)
     public function downloadFinancialReport($periodType, $params)
     {
         switch ($periodType) {
             case 'daily':
-                $total = $this->dailyFinancialReport($params['date']);
+                $stats = $this->dailyReservationStats($params['date']);
                 $view = 'reports.financial_daily';
-                $periodString = $params['date'];
+                $variables = [
+                    'paid_total' => $stats['paid_total'],
+                    'paid_count' => $stats['paid_count'],
+                    'free_count' => $stats['free_count'],
+                    'date' => $params['date']
+                ];
+                $filename = 'finansijski_izvjestaj_'.$params['date'].'.pdf';
                 break;
             case 'monthly':
-                $total = $this->monthlyFinancialReport($params['month'], $params['year']);
+                $month = (int)$params['month'];
+                $stats = $this->monthlyReservationStats($month, $params['year']);
                 $view = 'reports.financial_monthly';
-                $periodString = "{$params['month']}.{$params['year']}";
+                $variables = [
+                    'paid_total' => $stats['paid_total'],
+                    'paid_count' => $stats['paid_count'],
+                    'free_count' => $stats['free_count'],
+                    'month' => $month,
+                    'year' => $params['year']
+                ];
+                $filename = 'finansijski_izvjestaj_'.$month.'_'.$params['year'].'.pdf';
                 break;
             case 'yearly':
-                $total = $this->yearlyFinancialReport($params['year']);
+                $stats = $this->yearlyReservationStats($params['year']);
+                $financePerMonth = $this->yearlyFinancePerMonth($params['year']);
                 $view = 'reports.financial_yearly';
-                $periodString = (string)$params['year'];
+                $variables = [
+                    'paid_total' => $stats['paid_total'],
+                    'paid_count' => $stats['paid_count'],
+                    'free_count' => $stats['free_count'],
+                    'financeData' => $financePerMonth,
+                    'year' => $params['year']
+                ];
+                $filename = 'finansijski_izvjestaj_'.$params['year'].'.pdf';
                 break;
             default:
                 throw new \InvalidArgumentException('Nepoznat period');
         }
 
-        $pdf = Pdf::loadView($view, [
-            'total' => $total,
-            'periodString' => $periodString,
+        $pdf = Pdf::loadView($view, $variables)->setPaper('a4', 'portrait')->setOptions([
+            'defaultFont' => 'DejaVu Sans',
+            'isRemoteEnabled' => false,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => false,
+            'isJavascriptEnabled' => false,
+            'defaultMediaType' => 'screen',
+            'isFontSubsettingEnabled' => false,
+            'dpi' => 96,
+            'fontHeightRatio' => 1.1,
+            'defaultEncoding' => 'UTF-8',
         ]);
+        return $pdf->download($filename);
+    }
 
-        return $pdf->download('finansijski_izvjestaj_'.$periodString.'.pdf');
+    // Broj rezervacija za dati dan (samo paid)
+    public function dailyCount($date)
+    {
+        return DB::table('reservations')
+            ->whereDate('reservation_date', $date)
+            ->where('status', 'paid')
+            ->count();
+    }
+
+    // Broj rezervacija za mjesec (samo paid)
+    public function monthlyCount($month, $year)
+    {
+        $month = (int)$month;
+        return DB::table('reservations')
+            ->whereYear('reservation_date', $year)
+            ->whereMonth('reservation_date', $month)
+            ->where('status', 'paid')
+            ->count();
+    }
+
+    // Broj rezervacija za godinu (samo paid)
+    public function yearlyCount($year)
+    {
+        return DB::table('reservations')
+            ->whereYear('reservation_date', $year)
+            ->where('status', 'paid')
+            ->count();
     }
 }

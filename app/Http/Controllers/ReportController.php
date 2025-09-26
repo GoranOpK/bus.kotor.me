@@ -12,97 +12,198 @@ use App\Mail\YearlyFinanceReportMail;
 use App\Mail\YearlyVehicleReservationReportMail;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
-    public function sendDailyFinance(ReportService $service)
+    protected function getReportEmails()
     {
-        $date = now()->toDateString();
-        $finance = $service->dailyFinancialReport($date);
-        $count = $service->dailyCount($date);
-        $emails = [
-            'prihodi@kotor.me',
-            'mirjana.grbovic@kotor.me',
-        ];
-        foreach ($emails as $email) {
-            Mail::to($email)->send(new DailyFinanceReportMail($date, $finance, $count));
-        }
-        return response()->json(['status' => 'Dnevni finansijski izvještaj je poslat!']);
+        return DB::table('report_emails')->where('name', 'report_email')->pluck('value')->toArray();
     }
 
-    public function sendDailyVehicleReservations(ReportService $service)
+    public function sendDailyFinance(Request $request, ReportService $service)
     {
-        $date = Carbon::yesterday()->toDateString();
+        $date = $request->get('date', now()->subDay()->format('Y-m-d'));
+
+        // Dodaj "paid" i "free" statistiku
+        $stats = $service->dailyReservationStats($date);
+
+        $pdf = Pdf::loadView('reports.daily_finance_report_pdf', [
+            'paid_total' => $stats['paid_total'],
+            'paid_count' => $stats['paid_count'],
+            'free_count' => $stats['free_count'],
+            'date' => $date,
+        ])->setPaper('a4', 'portrait')->setOptions([
+            'defaultFont' => 'DejaVu Sans',
+            'isRemoteEnabled' => false,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => false,
+            'isJavascriptEnabled' => false,
+            'defaultMediaType' => 'screen',
+            'isFontSubsettingEnabled' => false,
+            'dpi' => 96,
+            'fontHeightRatio' => 1.1,
+            'defaultEncoding' => 'UTF-8',
+        ]);
+
+        // Mail slanje (primjer, koristi po potrebi)
+        // Mail::to($this->getReportEmails())->send(new DailyFinanceReportMail($pdf->output()));
+
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="dnevni_finansijski_izvjestaj_' . $date . '.pdf"');
+    }
+
+    public function sendDailyVehicleReservations(Request $request, ReportService $service)
+    {
+        $date = $request->get('date', Carbon::yesterday()->toDateString());
         $reservationsByType = $service->dailyVehicleReservationsByType($date);
-        // Dodaj za debug:
-        // dd($reservationsByType, gettype($reservationsByType));
-        $emails = [
-            'prihodi@kotor.me',
-            'mirjana.grbovic@kotor.me',
-        ];
-        foreach ($emails as $email) {
-            Mail::to($email)->send(new DailyVehicleReservationReportMail($reservationsByType, $date));
-        }
-        return response()->json(['status' => 'Dnevni izvještaj po tipu vozila je poslat!']);
+
+        $pdf = Pdf::loadView('reports.daily_vehicle_reservation_report_pdf', [
+            'date' => $date,
+            'reservationsByType' => $reservationsByType,
+        ])->setPaper('a4', 'portrait')->setOptions([
+            'defaultFont' => 'DejaVu Sans',
+            'isRemoteEnabled' => false,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => false,
+            'isJavascriptEnabled' => false,
+            'defaultMediaType' => 'screen',
+            'isFontSubsettingEnabled' => false,
+            'dpi' => 96,
+            'fontHeightRatio' => 1.1,
+            'defaultEncoding' => 'UTF-8',
+        ]);
+
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="dnevni_izvjestaj_rezervacije_po_voznom_parku_' . $date . '.pdf"');
     }
 
-    public function sendMonthlyFinance(ReportService $service)
+    public function sendMonthlyFinance(Request $request, ReportService $service)
     {
-        $date = Carbon::now()->subMonth();
-        $month = $date->month;
-        $year = $date->year;
-        $finance = $service->monthlyFinancialReport($month, $year);
-        $emails = [
-            'prihodi@kotor.me',
-            'mirjana.grbovic@kotor.me',
-        ];
-        foreach ($emails as $email) {
-            Mail::to($email)->send(new MonthlyFinanceReportMail($month, $year, $finance));
-        }
-        return response()->json(['status' => 'Mjesečni finansijski izvještaj je poslat!']);
+        $month = $request->get('month', Carbon::now()->subMonth()->month);
+        $year = $request->get('year', Carbon::now()->subMonth()->year);
+        $month = (int)$month;
+
+        // Dodaj "paid" i "free" statistiku
+        $stats = $service->monthlyReservationStats($month, $year);
+
+        $pdf = Pdf::loadView('reports.monthly_finance_report_pdf', [
+            'paid_total' => $stats['paid_total'],
+            'paid_count' => $stats['paid_count'],
+            'free_count' => $stats['free_count'],
+            'month' => $month,
+            'year' => $year,
+        ])->setPaper('a4', 'portrait')->setOptions([
+            'defaultFont' => 'DejaVu Sans',
+            'isRemoteEnabled' => false,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => false,
+            'isJavascriptEnabled' => false,
+            'defaultMediaType' => 'screen',
+            'isFontSubsettingEnabled' => false,
+            'dpi' => 96,
+            'fontHeightRatio' => 1.1,
+            'defaultEncoding' => 'UTF-8',
+        ]);
+
+        // Mail slanje (primjer, koristi po potrebi)
+        // Mail::to($this->getReportEmails())->send(new MonthlyFinanceReportMail($pdf->output()));
+
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="mjesecni_finansijski_izvjestaj_' . $month . '_' . $year . '.pdf"');
     }
 
-    public function sendMonthlyVehicleReservations(ReportService $service)
+    public function sendMonthlyVehicleReservations(Request $request, ReportService $service)
     {
-        $month = Carbon::now()->subMonth()->format('m');
-        $year = Carbon::now()->subMonth()->year;
+        $month = $request->get('month', Carbon::now()->subMonth()->month);
+        $year = $request->get('year', Carbon::now()->subMonth()->year);
+        $month = (int)$month;
         $reservationsByType = $service->monthlyVehicleReservationsByType($month, $year);
-        $emails = [
-            'prihodi@kotor.me',
-            'mirjana.grbovic@kotor.me',
-        ];
-        foreach ($emails as $email) {
-            Mail::to($email)->send(new MonthlyVehicleReservationReportMail($month, $year, $reservationsByType));
-        }
-        return response()->json(['status' => 'Mjesečni izvještaj po tipu vozila je poslat!']);
+
+        $pdf = Pdf::loadView('reports.monthly_vehicle_reservation_report_pdf', [
+            'month' => $month,
+            'year' => $year,
+            'reservationsByType' => $reservationsByType,
+        ])->setPaper('a4', 'portrait')->setOptions([
+            'defaultFont' => 'DejaVu Sans',
+            'isRemoteEnabled' => false,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => false,
+            'isJavascriptEnabled' => false,
+            'defaultMediaType' => 'screen',
+            'isFontSubsettingEnabled' => false,
+            'dpi' => 96,
+            'fontHeightRatio' => 1.1,
+            'defaultEncoding' => 'UTF-8',
+        ]);
+
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="mjesecni_izvjestaj_rezervacije_po_voznom_parku_' . $month . '_' . $year . '.pdf"');
     }
 
-    public function sendYearlyFinance(ReportService $service)
+    public function sendYearlyFinance(Request $request, ReportService $service)
     {
-        $year = Carbon::now()->subYear()->year;
-        $financePerMonth = $service->yearlyFinancialReport($year); // treba da bude kolekcija!
-        $totalFinance = is_object($financePerMonth) ? $financePerMonth->sum('prihod') : 0;
-        $emails = [
-            'prihodi@kotor.me',
-            'mirjana.grbovic@kotor.me',
-        ];
-        foreach ($emails as $email) {
-            Mail::to($email)->send(new YearlyFinanceReportMail($year, $financePerMonth, $totalFinance));
-        }
-        return response()->json(['status' => 'Godišnji finansijski izvještaj je poslat!']);
+        $year = $request->get('year', Carbon::now()->subYear()->year);
+
+        // Dodaj "paid" i "free" statistiku
+        $stats = $service->yearlyReservationStats($year);
+        $financePerMonth = $service->yearlyFinancePerMonth($year);
+
+        $pdf = Pdf::loadView('reports.yearly_finance_report_pdf', [
+            'paid_total' => $stats['paid_total'],
+            'paid_count' => $stats['paid_count'],
+            'free_count' => $stats['free_count'],
+            'financeData' => $financePerMonth,
+            'year' => $year,
+        ])->setPaper('a4', 'portrait')->setOptions([
+            'defaultFont' => 'DejaVu Sans',
+            'isRemoteEnabled' => false,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => false,
+            'isJavascriptEnabled' => false,
+            'defaultMediaType' => 'screen',
+            'isFontSubsettingEnabled' => false,
+            'dpi' => 96,
+            'fontHeightRatio' => 1.1,
+            'defaultEncoding' => 'UTF-8',
+        ]);
+
+        // Mail slanje (primjer, koristi po potrebi)
+        // Mail::to($this->getReportEmails())->send(new YearlyFinanceReportMail($pdf->output()));
+
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="godisnji_finansijski_izvjestaj_' . $year . '.pdf"');
     }
 
-    public function sendYearlyVehicleReservations(ReportService $service)
+    public function sendYearlyVehicleReservations(Request $request, ReportService $service)
     {
-        $year = Carbon::now()->subYear()->year;
+        $year = $request->get('year', Carbon::now()->subYear()->year);
         $reservationsByType = $service->yearlyVehicleReservationsByType($year);
-        $emails = [
-            'prihodi@kotor.me',
-            'mirjana.grbovic@kotor.me',
-        ];
-        foreach ($emails as $email) {
-            Mail::to($email)->send(new YearlyVehicleReservationReportMail($year, $reservationsByType));
-        }
-        return response()->json(['status' => 'Godišnji izvještaj po tipu vozila je poslat!']);
+
+        $pdf = Pdf::loadView('reports.yearly_vehicle_reservation_report_pdf', [
+            'year' => $year,
+            'reservationsByType' => $reservationsByType,
+        ])->setPaper('a4', 'portrait')->setOptions([
+            'defaultFont' => 'DejaVu Sans',
+            'isRemoteEnabled' => false,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => false,
+            'isJavascriptEnabled' => false,
+            'defaultMediaType' => 'screen',
+            'isFontSubsettingEnabled' => false,
+            'dpi' => 96,
+            'fontHeightRatio' => 1.1,
+            'defaultEncoding' => 'UTF-8',
+        ]);
+
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="godisnji_izvjestaj_rezervacije_po_voznom_parku_' . $year . '.pdf"');
     }
 }

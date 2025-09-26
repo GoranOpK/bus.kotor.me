@@ -12,11 +12,19 @@ class AuthorizeAdminOrControl
      */
     public function handle(Request $request, Closure $next)
     {
-        // Provjeri da li postoji korisnik i da li mu je username 'admin' ili 'control'
-        if (!$request->user() || !in_array($request->user()->username, ['admin', 'control'])) {
-            abort(403, 'Unauthorized action.');
+        // Debug informacije
+        \Log::info('AuthorizeAdminOrControl middleware', [
+            'user' => $request->user(),
+            'username' => $request->user() ? $request->user()->username : null,
+            'auth_header' => $request->header('Authorization'),
+            'path' => $request->path(),
+        ]);
+
+        // Proveri da li postoji Sanctum user (admin ili readonly admin)
+        if ($request->user() && in_array($request->user()->username, ['admin', 'control'])) {
+            return $next($request);
         }
 
-        return $next($request);
+        abort(403, 'Unauthorized action.');
     }
 }

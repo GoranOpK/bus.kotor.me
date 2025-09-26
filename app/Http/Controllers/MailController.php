@@ -20,26 +20,23 @@ class MailController extends Controller
             // dodaj još polja po potrebi
         ]);
 
-        // Generisanje PDF-ova u letu:
+        // Generiši samo invoice PDF
         $pdf1 = Pdf::loadView('pdfs.invoice', [
             'user_name' => $validated['user_name'],
             'amount' => $validated['amount'],
             // ...
         ]);
-        $pdf2 = Pdf::loadView('pdfs.confirmation', [
-            'transaction_id' => $validated['transaction_id'],
-            // ...
-        ]);
 
-        // Slanje e-maila sa oba PDF-a kao prilog
+        // Slanje e-maila samo sa jednim PDF-om kao prilog (račun)
         Mail::to($validated['email'])->send(
             new PaymentReservationConfirmationMail(
                 $validated['user_name'],
-                $pdf1->output(), // raw PDF data
-                $pdf2->output()  // raw PDF data
+                $pdf1->output(), // raw PDF data (račun)
+                null,            // confirmationPdf je null - neće biti dodat kao atačment
+                false            // nije besplatna rezervacija
             )
         );
 
-        return response()->json(['message' => 'Payment confirmation sent with PDF attachments.']);
+        return response()->json(['message' => 'Payment confirmation sent with PDF attachment.']);
     }
 }

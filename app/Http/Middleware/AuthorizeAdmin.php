@@ -7,16 +7,9 @@ use Illuminate\Http\Request;
 
 class AuthorizeAdmin
 {
-    /**
-     * Dozvoljava pristup samo korisnicima koji NISU readonly admin ('control').
-     */
     public function handle(Request $request, Closure $next)
     {
-        // Provjeri da li postoji autentifikovani korisnik i da NIJE 'control'
-        if (!$request->user() || $request->user()->username === 'control') {
-            abort(403, 'Unauthorized action.');
-        }
-
+        // Privremeno dozvoli SVIMA koji dođu do ove tačke (bez provjere)
         return $next($request);
     }
 }

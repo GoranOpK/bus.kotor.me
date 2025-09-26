@@ -11,26 +11,34 @@ class DailyVehicleReservationReportMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $data;
+    public $reservationsByType;
+    public $date;
 
-    /**
-     * Konstruktor - prosljeđuje podatke za izvještaj
-     */
-    public function __construct($data)
+    public function __construct($reservationsByType, $date)
     {
-        $this->data = $data;
+        $this->reservationsByType = $reservationsByType;
+        $this->date = $date;
     }
 
-    /**
-     * Priprema email sa dnevnim izvještajem o rezervacijama po tipu vozila u pdf-u
-     */
     public function build()
     {
-        // Generišemo PDF koristeći odgovarajući blade šablon iz resources/views/reports
-        $pdf = Pdf::loadView('reports.daily_vehicle_reservation_report_pdf', $this->data);
-
+        $pdf = Pdf::loadView('reports.daily_vehicle_reservation_report_pdf', [
+            'date' => $this->date,
+            'reservationsByType' => $this->reservationsByType,
+        ])->setPaper('a4', 'portrait')->setOptions([
+            'defaultFont' => 'DejaVu Sans',
+            'isRemoteEnabled' => false,
+            'isHtml5ParserEnabled' => true,
+            'isPhpEnabled' => false,
+            'isJavascriptEnabled' => false,
+            'defaultMediaType' => 'screen',
+            'isFontSubsettingEnabled' => false,
+            'dpi' => 96,
+            'fontHeightRatio' => 1.1,
+            'defaultEncoding' => 'UTF-8',
+        ]);
         return $this->subject('Dnevni izvještaj o rezervacijama po tipu vozila')
-            ->text('emails.empty')
+            ->view('emails.blank') // koristi prazan view
             ->attachData(
                 $pdf->output(),
                 'dnevni_izvjestaj_rezervacije_po_voznom_parku.pdf',
