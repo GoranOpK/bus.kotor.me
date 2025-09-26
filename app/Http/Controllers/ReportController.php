@@ -13,13 +13,17 @@ use App\Mail\YearlyVehicleReservationReportMail;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+<<<<<<< HEAD
 use Barryvdh\DomPDF\Facade\Pdf;
+=======
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
 
 class ReportController extends Controller
 {
     protected function getReportEmails()
     {
         return DB::table('report_emails')->where('name', 'report_email')->pluck('value')->toArray();
+<<<<<<< HEAD
     }
 
     public function sendDailyFinance(Request $request, ReportService $service)
@@ -74,6 +78,35 @@ class ReportController extends Controller
             'dpi' => 96,
             'fontHeightRatio' => 1.1,
             'defaultEncoding' => 'UTF-8',
+=======
+    }
+
+    public function sendDailyFinance(Request $request, ReportService $service)
+    {
+        $date = $request->get('date', now()->subDay()->format('Y-m-d'));
+        $finance = $service->dailyFinancialReport($date);
+        $count = $service->dailyCount($date);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.daily_finance_report_pdf', [
+            'total' => $finance,
+            'count' => $count,
+            'date' => $date,
+        ]);
+
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="dnevni_finansijski_izvjestaj_' . $date . '.pdf"');
+    }
+
+    public function sendDailyVehicleReservations(Request $request, ReportService $service)
+    {
+        $date = $request->get('date', Carbon::yesterday()->toDateString());
+        $reservationsByType = $service->dailyVehicleReservationsByType($date);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.daily_vehicle_reservation_report_pdf', [
+            'date' => $date,
+            'reservationsByType' => $reservationsByType,
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
         ]);
 
         return response($pdf->output())
@@ -85,6 +118,7 @@ class ReportController extends Controller
     {
         $month = $request->get('month', Carbon::now()->subMonth()->month);
         $year = $request->get('year', Carbon::now()->subMonth()->year);
+<<<<<<< HEAD
         $month = (int)$month;
 
         // Dodaj "paid" i "free" statistiku
@@ -112,6 +146,18 @@ class ReportController extends Controller
         // Mail slanje (primjer, koristi po potrebi)
         // Mail::to($this->getReportEmails())->send(new MonthlyFinanceReportMail($pdf->output()));
 
+=======
+        $finance = $service->monthlyFinancialReport($month, $year);
+        $count = $service->monthlyCount($month, $year);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.monthly_finance_report_pdf', [
+            'total' => $finance,
+            'count' => $count,
+            'month' => $month,
+            'year' => $year,
+        ]);
+
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
         return response($pdf->output())
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'inline; filename="mjesecni_finansijski_izvjestaj_' . $month . '_' . $year . '.pdf"');
@@ -121,6 +167,7 @@ class ReportController extends Controller
     {
         $month = $request->get('month', Carbon::now()->subMonth()->month);
         $year = $request->get('year', Carbon::now()->subMonth()->year);
+<<<<<<< HEAD
         $month = (int)$month;
         $reservationsByType = $service->monthlyVehicleReservationsByType($month, $year);
 
@@ -139,6 +186,14 @@ class ReportController extends Controller
             'dpi' => 96,
             'fontHeightRatio' => 1.1,
             'defaultEncoding' => 'UTF-8',
+=======
+        $reservationsByType = $service->monthlyVehicleReservationsByType($month, $year);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.monthly_vehicle_reservation_report_pdf', [
+            'month' => $month,
+            'year' => $year,
+            'reservationsByType' => $reservationsByType,
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
         ]);
 
         return response($pdf->output())
@@ -149,6 +204,7 @@ class ReportController extends Controller
     public function sendYearlyFinance(Request $request, ReportService $service)
     {
         $year = $request->get('year', Carbon::now()->subYear()->year);
+<<<<<<< HEAD
 
         // Dodaj "paid" i "free" statistiku
         $stats = $service->yearlyReservationStats($year);
@@ -176,6 +232,19 @@ class ReportController extends Controller
         // Mail slanje (primjer, koristi po potrebi)
         // Mail::to($this->getReportEmails())->send(new YearlyFinanceReportMail($pdf->output()));
 
+=======
+        $financePerMonth = $service->yearlyFinancePerMonth($year);
+        $totalFinance = $service->yearlyFinancialReport($year);
+        $totalCount = $service->yearlyCount($year);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.yearly_finance_report_pdf', [
+            'totalFinance' => $totalFinance,
+            'financeData' => $financePerMonth,
+            'totalCount' => $totalCount,
+            'year' => $year,
+        ]);
+
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
         return response($pdf->output())
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'inline; filename="godisnji_finansijski_izvjestaj_' . $year . '.pdf"');
@@ -186,6 +255,7 @@ class ReportController extends Controller
         $year = $request->get('year', Carbon::now()->subYear()->year);
         $reservationsByType = $service->yearlyVehicleReservationsByType($year);
 
+<<<<<<< HEAD
         $pdf = Pdf::loadView('reports.yearly_vehicle_reservation_report_pdf', [
             'year' => $year,
             'reservationsByType' => $reservationsByType,
@@ -200,6 +270,11 @@ class ReportController extends Controller
             'dpi' => 96,
             'fontHeightRatio' => 1.1,
             'defaultEncoding' => 'UTF-8',
+=======
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.yearly_vehicle_reservation_report_pdf', [
+            'year' => $year,
+            'reservationsByType' => $reservationsByType,
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
         ]);
 
         return response($pdf->output())

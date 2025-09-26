@@ -32,6 +32,7 @@ class YearlyVehicleReservationReportMail extends Mailable
         $pdf = Pdf::loadView('reports.yearly_vehicle_reservation_report_pdf', [
             'year' => $this->year,
             'reservationsByType' => $this->reservationsByType,
+<<<<<<< HEAD
         ])->setPaper('a4', 'portrait')->setOptions([
             'defaultFont' => 'DejaVu Sans',
             'isRemoteEnabled' => false,
@@ -43,6 +44,8 @@ class YearlyVehicleReservationReportMail extends Mailable
             'dpi' => 96,
             'fontHeightRatio' => 1.1,
             'defaultEncoding' => 'UTF-8',
+=======
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
         ]);
 
         return $this->subject('Godišnji izvještaj o rezervacijama po tipu vozila')

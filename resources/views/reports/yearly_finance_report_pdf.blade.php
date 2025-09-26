@@ -1,11 +1,15 @@
+<<<<<<< HEAD
 <!--
 Godišnji finansijski izvještaj - prikazuje podatke o plaćenim i besplatnim rezervacijama za cijelu godinu, kao i prihod po mjesecima.
 Ispravljeno: svi znakovi čćšđž i € prikazuju se ispravno!
 -->
+=======
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
+<<<<<<< HEAD
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>{{ $title ?? 'Godišnji finansijski izvještaj - Kotor Bus' }}</title>
     <style>
@@ -68,11 +72,30 @@ Ispravljeno: svi znakovi čćšđž i € prikazuju se ispravno!
     <br>
 
     <!-- Tabela sa prihodima po mjesecima -->
+=======
+    <title>{{ $title ?? 'Godišnji finansijski izvještaj - Kotor Bus' }}</title>
+    <style>
+        body { font-family: DejaVu Sans, Arial, sans-serif; }
+        table { border-collapse: collapse; width: 100%; margin-top: 24px; }
+        th, td { border: 1px solid #cccccc; padding: 8px 12px; text-align: left; }
+        th { background: #eeeeee; }
+    </style>
+</head>
+<body>
+    <h2>{{ $title ?? 'Godišnji finansijski izvještaj - Kotor Bus' }}</h2>
+    <p>Godina: {{ $year }}</p>
+    <p><strong>Ukupan prihod:</strong> {{ number_format($totalFinance ?? 0, 2, ',', '.') }} €</p>
+    <p><strong>Ukupan broj transakcija:</strong> {{ $totalCount ?? 0 }}</p>
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
     <table>
         <thead>
             <tr>
                 <th>Mjesec</th>
+<<<<<<< HEAD
                 <th>Prihod (paid)</th>
+=======
+                <th>Prihod</th>
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
             </tr>
         </thead>
         <tbody>
@@ -86,7 +109,11 @@ Ispravljeno: svi znakovi čćšđž i € prikazuju se ispravno!
             @foreach($financeData as $row)
                 <tr>
                     <td>{{ $mjeseci[intval($row['mjesec'])] ?? $row['mjesec'] }}</td>
+<<<<<<< HEAD
                     <td>{{ number_format($row['prihod'] ?? 0, 2, ',', '.') }}&nbsp;€</td>
+=======
+                    <td>{{ number_format($row['prihod'] ?? 0, 2, ',', '.') }} €</td>
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
                 </tr>
             @endforeach
         </tbody>

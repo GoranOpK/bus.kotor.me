@@ -34,8 +34,18 @@ function isValidEmail(email) {
 
 // Funkcija za validaciju registarskih tablica
 function isValidLicensePlate(plate) {
+<<<<<<< HEAD
   // Osnovna validacija - bar 3 karaktera, slova (uključujući dijakritičke simbole), brojevi i crtice
   const plateRegex = /^[A-ZŠĐŽČĆ0-9\-]{3,15}$/;
+=======
+<<<<<<< HEAD
+  // Osnovna validacija - bar 3 karaktera, slova (uključujući dijakritičke simbole), brojevi i crtice
+  const plateRegex = /^[A-ZŠĐŽČĆ0-9\-]{3,15}$/;
+=======
+  // Osnovna validacija - bar 3 karaktera, samo slova, brojevi i crtice
+  const plateRegex = /^[A-Z0-9\-]{3,15}$/;
+>>>>>>> edd871dd4444f817be418d934462960767b66424
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
   return plateRegex.test(plate);
 }
 
@@ -312,7 +322,15 @@ async function getAvailableParkingSlots() {
   try {
     const response = await fetch('/api/system-config/available-parking-slots');
     const data = await response.json();
+<<<<<<< HEAD
     const value = data.value || 9; // fallback na 9 ako API ne radi (može se promeniti u config)
+=======
+<<<<<<< HEAD
+    const value = data.value || 9; // fallback na 9 ako API ne radi (može se promeniti u config)
+=======
+    const value = data.value || 8; // fallback na 8 ako API ne radi (može se promeniti u config)
+>>>>>>> edd871dd4444f817be418d934462960767b66424
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
     
     // Sačuvaj u cache
     availableParkingSlotsCache = value;
@@ -321,7 +339,15 @@ async function getAvailableParkingSlots() {
     return value;
   } catch (error) {
     console.error('Error fetching available parking slots:', error);
+<<<<<<< HEAD
     return availableParkingSlotsCache ||9; // koristi cache ili fallback na 9 (može se promeniti u config)
+=======
+<<<<<<< HEAD
+    return availableParkingSlotsCache ||9; // koristi cache ili fallback na 9 (može se promeniti u config)
+=======
+    return availableParkingSlotsCache ||8; // koristi cache ili fallback na 8 (može se promeniti u config)
+>>>>>>> edd871dd4444f817be418d934462960767b66424
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
   }
 }
 

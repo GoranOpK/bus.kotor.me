@@ -35,6 +35,7 @@ class MonthlyVehicleReservationReportMail extends Mailable
             'month' => $this->month,
             'year' => $this->year,
             'reservationsByType' => $this->reservationsByType
+<<<<<<< HEAD
         ])->setPaper('a4', 'portrait')->setOptions([
             'defaultFont' => 'DejaVu Sans',
             'isRemoteEnabled' => false,
@@ -46,6 +47,8 @@ class MonthlyVehicleReservationReportMail extends Mailable
             'dpi' => 96,
             'fontHeightRatio' => 1.1,
             'defaultEncoding' => 'UTF-8',
+=======
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
         ]);
 
         return $this->subject('Mjesečni izvještaj o rezervacijama po tipu vozila')

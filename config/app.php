@@ -253,6 +253,14 @@ return [
     |
     */
 
+<<<<<<< HEAD
     'default_available_parking_slots' => env('DEFAULT_AVAILABLE_PARKING_SLOTS', 9),
+=======
+<<<<<<< HEAD
+    'default_available_parking_slots' => env('DEFAULT_AVAILABLE_PARKING_SLOTS', 9),
+=======
+    'default_available_parking_slots' => env('DEFAULT_AVAILABLE_PARKING_SLOTS', 8),
+>>>>>>> edd871dd4444f817be418d934462960767b66424
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
 
 ];

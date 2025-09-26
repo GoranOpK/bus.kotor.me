@@ -6,7 +6,10 @@ Ispravljeno: svi znakovi čćšđž i € prikazuju se ispravno!
 <html>
 <head>
     <meta charset="utf-8">
+<<<<<<< HEAD
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+=======
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
     <title>{{ $title ?? 'Mjesečni finansijski izvještaj - Kotor Bus' }}</title>
     <style>
         body { 
@@ -20,12 +23,17 @@ Ispravljeno: svi znakovi čćšđž i € prikazuju se ispravno!
     </style>
 </head>
 <body>
+<<<<<<< HEAD
     <!-- Naslov izvještaja -->
     <h2>{{ $title ?? 'Mjesečni finansijski izvještaj - Kotor Bus' }}</h2>
     <!-- Prikaz mjeseca i godine izvještaja -->
     <p>Mjesec: {{ \Carbon\Carbon::createFromDate($year, $month, 1)->format('m.Y') }}</p>
 
     <!-- Tabela za plaćene rezervacije -->
+=======
+    <h2>{{ $title ?? 'Mjesečni finansijski izvještaj - Kotor Bus' }}</h2>
+    <p>Mjesec: {{ \Carbon\Carbon::createFromDate($year, $month, 1)->format('m.Y') }}</p>
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
     <table>
         <thead>
             <tr>
@@ -38,6 +46,7 @@ Ispravljeno: svi znakovi čćšđž i € prikazuju se ispravno!
         </thead>
         <tbody>
             <tr>
+<<<<<<< HEAD
                 <td>{{ number_format($paid_total ?? 0, 2, ',', '.') }}&nbsp;€</td>
                 <td>{{ $paid_count ?? 0 }}</td>
             </tr>
@@ -61,6 +70,10 @@ Ispravljeno: svi znakovi čćšđž i € prikazuju se ispravno!
             <tr>
                 <td>{{ $free_count ?? 0 }}</td>
                 <td>Sve besplatne rezervacije imaju iznos 0&nbsp;€</td>
+=======
+                <td>{{ number_format($finance ?? 0, 2, ',', '.') }} €</td>
+                <td>{{ $count ?? 0 }}</td>
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
             </tr>
         </tbody>
     </table>

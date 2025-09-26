@@ -481,6 +481,44 @@ class PaymentController extends Controller
                     }
                 }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+                // DODATNA PROVERA: Ručno pošalji email ako nije poslat
+                if ($reservation && $reservation->email) {
+                    // Proveri da li je email već poslat
+                    if (\Schema::hasColumn('reservations', 'email_sent') && !$reservation->email_sent) {
+                        try {
+                            $invoicePdf = $reservationController->generateInvoicePdf($reservation, 'en');
+                            
+                            \Mail::to($reservation->email)->send(
+                                new \App\Mail\PaymentReservationConfirmationMail(
+                                    $reservation->user_name,
+                                    $invoicePdf,
+                                    null,
+                                    false,
+                                    'en'
+                                )
+                            );
+                            
+                            // Označi da je email poslat
+                            $reservation->update(['email_sent' => 1]);
+                            
+                            Log::info('Bankart callback - email poslat ručno', [
+                                'reservation_id' => $reservation->id,
+                                'email' => $reservation->email
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::error('Bankart callback - greška pri ručnom slanju email-a', [
+                                'error' => $e->getMessage(),
+                                'reservation_id' => $reservation->id
+                            ]);
+                        }
+                    }
+                }
+>>>>>>> edd871dd4444f817be418d934462960767b66424
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
 
                 // SIGURNOST: Postavi merchant_transaction_id u sesiju za autorizaciju download-a
                 if ($reservation && $reservation->merchant_transaction_id) {

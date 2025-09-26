@@ -15,6 +15,7 @@ class MonthlyFinanceReportMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+<<<<<<< HEAD
     public $month;
     public $year;
     public $paid_total;
@@ -40,6 +41,22 @@ class MonthlyFinanceReportMail extends Mailable
         $this->paid_count = $paid_count;
         $this->free_count = $free_count;
         $this->title = $title ?? 'Mjesečni finansijski izvještaj - Kotor Bus';
+=======
+    public $finance;
+    public $month;
+    public $year;
+    public $count;
+
+    /**
+     * Konstruktor
+     */
+    public function __construct($month, $year, $finance, $count = 0)
+    {
+        $this->month = $month;
+        $this->year = $year;
+        $this->finance = $finance;
+        $this->count = $count;
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
     }
 
     /**
@@ -47,6 +64,7 @@ class MonthlyFinanceReportMail extends Mailable
      */
     public function build()
     {
+<<<<<<< HEAD
         // Pravi PDF sa novim parametrima
         $pdf = Pdf::loadView('reports.monthly_finance_report_pdf', [
             'month' => $this->month,
@@ -71,5 +89,21 @@ class MonthlyFinanceReportMail extends Mailable
         return $this->subject($this->title)
             ->view('emails.blank')
             ->attachData($pdf->output(), 'mjesecni_finansijski_izvjestaj.pdf', ['mime' => 'application/pdf']);
+=======
+        $pdf = Pdf::loadView('reports.monthly_finance_report_pdf', [
+            'month' => $this->month,
+            'year' => $this->year,
+            'finance' => $this->finance,
+            'count' => $this->count,
+        ]);
+
+        return $this->subject('Mjesečni finansijski izvještaj')
+            ->view('emails.blank')
+            ->attachData(
+                $pdf->output(),
+                'mjesecni_finansijski_izvjestaj.pdf',
+                ['mime' => 'application/pdf']
+            );
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
     }
 }

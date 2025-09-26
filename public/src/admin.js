@@ -17,7 +17,15 @@ async function getAvailableParkingSlots() {
   try {
     const response = await fetch('/api/system-config/available-parking-slots');
     const data = await response.json();
+<<<<<<< HEAD
     const value = data.value || 9; // fallback na 9 ako API ne radi
+=======
+<<<<<<< HEAD
+    const value = data.value || 9; // fallback na 9 ako API ne radi
+=======
+    const value = data.value || 8; // fallback na 8 ako API ne radi
+>>>>>>> edd871dd4444f817be418d934462960767b66424
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
     
     // Sačuvaj u cache
     availableParkingSlotsCache = value;
@@ -26,7 +34,15 @@ async function getAvailableParkingSlots() {
     return value;
   } catch (error) {
     console.error('Error fetching available parking slots:', error);
+<<<<<<< HEAD
     return availableParkingSlotsCache || 9; // koristi cache ili fallback na 9
+=======
+<<<<<<< HEAD
+    return availableParkingSlotsCache || 9; // koristi cache ili fallback na 9
+=======
+    return availableParkingSlotsCache || 8; // koristi cache ili fallback na 8
+>>>>>>> edd871dd4444f817be418d934462960767b66424
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
   }
 }
 
@@ -1346,7 +1362,15 @@ function showReservationForm(reservation) {
       <option value="OTHER" ${reservation.country === 'OTHER' ? 'selected' : ''}>Ostalo</option>
     </select><br>
         <label>Registrarska oznaka:</label>
+<<<<<<< HEAD
     <input type="text" id="license_plate" value="${reservation.license_plate || ''}" ${isPastDate ? 'readonly' : ''} style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-ZŠĐŽČĆ0-9]/g, '');"><br>
+=======
+<<<<<<< HEAD
+    <input type="text" id="license_plate" value="${reservation.license_plate || ''}" ${isPastDate ? 'readonly' : ''} style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-ZŠĐŽČĆ0-9]/g, '');"><br>
+=======
+    <input type="text" id="license_plate" value="${reservation.license_plate || ''}" ${isPastDate ? 'readonly' : ''} style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');"><br>
+>>>>>>> edd871dd4444f817be418d934462960767b66424
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
         <label>Email:</label>
     <input type="email" id="email" value="${reservation.email || ''}" ${isPastDate ? 'readonly' : ''}><br>
         <label>ID tipa vozila:</label>
@@ -1751,8 +1775,18 @@ window.addEventListener('DOMContentLoaded', function() {
   licensePlateInputs.forEach(input => {
     input.style.textTransform = 'uppercase';
     input.addEventListener('input', function() {
+<<<<<<< HEAD
       // Filtriraj velika slova (uključujući dijakritičke simbole) i brojeve
       this.value = this.value.toUpperCase().replace(/[^A-ZŠĐŽČĆ0-9]/g, '');
+=======
+<<<<<<< HEAD
+      // Filtriraj velika slova (uključujući dijakritičke simbole) i brojeve
+      this.value = this.value.toUpperCase().replace(/[^A-ZŠĐŽČĆ0-9]/g, '');
+=======
+      // Filtriraj samo velika slova i brojeve
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+>>>>>>> edd871dd4444f817be418d934462960767b66424
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
     });
 });
 

@@ -12,7 +12,15 @@ class SlotService
      */
     private function getMaxCapacity()
     {
+<<<<<<< HEAD
         $defaultValue = config('app.default_available_parking_slots', 9);
+=======
+<<<<<<< HEAD
+        $defaultValue = config('app.default_available_parking_slots', 9);
+=======
+        $defaultValue = config('app.default_available_parking_slots', 8);
+>>>>>>> edd871dd4444f817be418d934462960767b66424
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
         return cache()->remember('available_parking_slots', 300, function () use ($defaultValue) {
             return (int)SystemConfig::where('name', 'available_parking_slots')->value('value') ?: $defaultValue;
         });

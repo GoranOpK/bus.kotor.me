@@ -16,11 +16,17 @@ class YearlyFinanceReportMail extends Mailable
     use Queueable, SerializesModels;
 
     public $year;
+<<<<<<< HEAD
     public $financeData;
     public $paid_total;
     public $paid_count;
     public $free_count;
     public $title;
+=======
+    public $financePerMonth;
+    public $totalFinance;
+    public $totalCount;
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
 
     /**
      * Konstruktor
@@ -32,6 +38,7 @@ class YearlyFinanceReportMail extends Mailable
      * @param int $free_count
      * @param string|null $title
      */
+<<<<<<< HEAD
     public function __construct($year, $financeData, $paid_total, $paid_count, $free_count, $title = null)
     {
         $this->year = $year;
@@ -40,6 +47,14 @@ class YearlyFinanceReportMail extends Mailable
         $this->paid_count = $paid_count;
         $this->free_count = $free_count;
         $this->title = $title ?? 'Godišnji finansijski izvještaj - Kotor Bus';
+=======
+    public function __construct($year, $financePerMonth, $totalFinance, $totalCount = 0)
+    {
+        $this->year = $year;
+        $this->financePerMonth = $financePerMonth;
+        $this->totalFinance = $totalFinance;
+        $this->totalCount = $totalCount;
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
     }
 
     /**
@@ -47,6 +62,7 @@ class YearlyFinanceReportMail extends Mailable
      */
     public function build()
     {
+<<<<<<< HEAD
         // Pravi PDF sa novim parametrima
         $pdf = Pdf::loadView('reports.yearly_finance_report_pdf', [
             'year' => $this->year,
@@ -71,5 +87,21 @@ class YearlyFinanceReportMail extends Mailable
         return $this->subject($this->title)
             ->view('emails.blank')
             ->attachData($pdf->output(), 'godisnji_finansijski_izvjestaj.pdf', ['mime' => 'application/pdf']);
+=======
+        $pdf = Pdf::loadView('reports.yearly_finance_report_pdf', [
+            'year' => $this->year,
+            'financeData' => $this->financePerMonth,
+            'totalFinance' => $this->totalFinance,
+            'totalCount' => $this->totalCount,
+        ]);
+
+        return $this->subject('Godišnji finansijski izvještaj')
+            ->view('emails.blank')
+            ->attachData(
+                $pdf->output(),
+                'godisnji_finansijski_izvjestaj.pdf',
+                ['mime' => 'application/pdf']
+            );
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
     }
 }

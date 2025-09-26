@@ -31,9 +31,21 @@ class MailController extends Controller
         Mail::to($validated['email'])->send(
             new PaymentReservationConfirmationMail(
                 $validated['user_name'],
+<<<<<<< HEAD
                 $pdf1->output(), // raw PDF data (račun)
                 null,            // confirmationPdf je null - neće biti dodat kao atačment
                 false            // nije besplatna rezervacija
+=======
+<<<<<<< HEAD
+                $pdf1->output(), // raw PDF data (račun)
+                null,            // confirmationPdf je null - neće biti dodat kao atačment
+                false            // nije besplatna rezervacija
+=======
+                $pdf1->output(), // raw PDF data
+                $pdf2->output(),  // raw PDF data
+                false // nije besplatna rezervacija
+>>>>>>> edd871dd4444f817be418d934462960767b66424
+>>>>>>> af255a2bafe1d3f8ed06ac5fb77cd16c44953019
             )
         );
 
